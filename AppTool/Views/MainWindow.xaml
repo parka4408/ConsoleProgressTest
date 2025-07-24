@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="AppTool.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AppTool"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:AppTool.ViewModels"
+    xmlns:m="using:AppTool.Models"
+    mc:Ignorable="d"
+    Title="AppTool">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="RootGrid">
+        <Grid.Resources>
+            <!-- テーブル情報 -->
+            <DataTemplate x:Key="TableInfoTemplate" x:DataType="m:TableInfo">
+                <Border 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="テーブル情報" FontSize="20" FontWeight="Bold" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="名前：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind Name}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="説明：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4" VerticalAlignment="Top"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                Text="{x:Bind Description}" 
+                                TextWrapping="Wrap"
+                                Margin="0,0,0,4"
+                                MaxHeight="100"
+                                TextTrimming="CharacterEllipsis"
+                                VerticalAlignment="Top" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="カテゴリ：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind Category}" Margin="0,0,0,4"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- ステータス -->
+            <DataTemplate x:Key="SpsStatusTemplate" x:DataType="m:SpsStatus">
+                <Border 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="ステータス" FontSize="20" FontWeight="Bold" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="成功件数：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind SucceededCount, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="失敗件数：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind FailedCount, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="最終更新日：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind LastUpdateCheckDate, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="新規作成日：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind CreatedDate, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="ステータス：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,0"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{x:Bind Status, Mode=OneWay}" Margin="0,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- SqlServerデータセット -->
+            <DataTemplate x:Key="SsDatasetTemplate" x:DataType="m:SqlServerDataset">
+                <Border 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="SqlServer" FontSize="20" FontWeight="Bold" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="レコード件数：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind RecordNum, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="最終同期日時：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind LastSynchronizedDate, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="更新日：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind CreatedDate, Mode=OneWay}" Margin="0,0,0,4"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- SharePointデータセット -->
+            <DataTemplate x:Key="SpDatasetTemplate" x:DataType="m:SharePointDataset">
+                <Border 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="SharePoint" FontSize="20" FontWeight="Bold" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="レコード件数：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind RecordNum, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="最終同期日時：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind LastSynchronizedDate, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="更新日：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind CreatedDate, Mode=OneWay}" Margin="0,0,0,4"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- リストアイテム -->
+            <DataTemplate x:Key="ListItemTemplate" x:DataType="vm:SpsItemViewModel">
+                <Border
+                    Padding="10,4"
+                    CornerRadius="3"
+                    Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind Info.Name}" FontWeight="SemiBold" FontSize="16"/>
+                            <TextBlock Text="{x:Bind Info.Category}" FontSize="12" Foreground="Gray"/>
+                            <ProgressBar
+                                Minimum="0"
+                                Maximum="100"
+                                Height="20"
+                                CornerRadius="4"
+                                Foreground="{ThemeResource AccentFillColorDefaultBrush}"
+                                Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+                                Value="{x:Bind ProgressValue, Mode=OneWay}"
+                                Visibility="{x:Bind ProgressVisibility, Mode=OneWay}"/>
+                        </StackPanel>
+
+                        <InfoBadge Background="#C42B1C" HorizontalAlignment="Right" VerticalAlignment="Top" Visibility="{x:Bind IsWarning, Mode=OneWay}">
+                            <InfoBadge.IconSource>
+                                <FontIconSource FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xF13C;" />
+                            </InfoBadge.IconSource>
+                        </InfoBadge>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+
+            <!-- SQLServer接続情報 -->
+            <DataTemplate x:Key="SqlServerConnectInfoTemplate" x:DataType="m:SqlServerConnectInfo">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" >
+                        <TextBlock VerticalAlignment="Center" Text="SQLServer接続情報" FontSize="20" FontWeight="Bold" />
+                        <Button
+                            x:Name="SqlServerConnectButton"
+                            Margin="5,5,0,0"
+                            VerticalAlignment="Center"
+                            ToolTipService.ToolTip="SQLServerに再接続します。"
+                            IsEnabled="{x:Bind IsTryConnect, Mode=OneWay}"
+                            Click="SqlServerConnectButton_Click">
+                            <Button.Content>
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE895;" FontSize="14"/>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="接続先：" FontWeight="SemiBold" Foreground="Gray" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind AccessPoint, Mode=OneWay}" Margin="0,0,0,4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="データベース：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4" VerticalAlignment="Top"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind DataBase, Mode=OneWay}" Margin="0,0,0,4"/>
+                    </Grid>
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- SharePoint接続情報 -->
+            <DataTemplate x:Key="SharePointConnectInfoTemplate" x:DataType="m:SharePointConnectInfo">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" >
+                        <TextBlock VerticalAlignment="Center" Text="SharePoint接続情報" FontSize="20" FontWeight="Bold" />
+                        <Button
+                            x:Name="SharePointConnectButton"
+                            Margin="5,5,0,0"
+                            VerticalAlignment="Center"
+                            ToolTipService.ToolTip="SharePointに再接続します。"
+                            Click="SharePointConnectButton_Click"
+                            IsEnabled="{x:Bind IsTryConnect, Mode=OneWay}">
+                            <Button.Content>
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE895;" FontSize="14"/>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="サイトURL：" FontWeight="SemiBold" Foreground="Gray" />
+                        <HyperlinkButton Grid.Row="0" Grid.Column="1" Content="{x:Bind SiteUrl, Mode=OneWay}" NavigateUri="{x:Bind SiteUrl, Mode=OneWay}" Padding="0" FontWeight="SemiBold" Margin="0,-2,0,4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="ユーザー名：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4" VerticalAlignment="Top"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind UserName, Mode=OneWay}" Margin="0,0,0,4"/>
+                    </Grid>
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- アニメーション -->
+            <Storyboard x:Key="SpFadeOutStoryboard" Completed="SpFadeOutStoryboard_Completed">
+                <DoubleAnimation
+                    Storyboard.TargetName="SpSuccessInfoBar"
+                    Storyboard.TargetProperty="Opacity"
+                    To="0"
+                    Duration="0:0:1"
+                    BeginTime="0:0:4" />
+            </Storyboard>
+            <Storyboard x:Name="SpConnectingPulseStoryboard" RepeatBehavior="Forever" AutoReverse="True">
+                <DoubleAnimation
+                Storyboard.TargetName="SpConnectingInfoBar"
+                Storyboard.TargetProperty="Opacity"
+                From="1.0"
+                To="0.4"
+                Duration="0:0:1" />
+            </Storyboard>
+            <Storyboard x:Key="SsFadeOutStoryboard" Completed="SsFadeOutStoryboard_Completed">
+                <DoubleAnimation
+                    Storyboard.TargetName="SsSuccessInfoBar"
+                    Storyboard.TargetProperty="Opacity"
+                    To="0"
+                    Duration="0:0:1"
+                    BeginTime="0:0:4" />
+            </Storyboard>
+            <Storyboard x:Name="SsConnectingPulseStoryboard" RepeatBehavior="Forever" AutoReverse="True">
+                <DoubleAnimation
+                    Storyboard.TargetName="SsConnectingInfoBar"
+                    Storyboard.TargetProperty="Opacity"
+                    From="1.0"
+                    To="0.4"
+                    Duration="0:0:1" />
+            </Storyboard>
+        </Grid.Resources>
+        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+
+        <!-- タイトル -->
+        <TextBlock Padding="40,15" Text="Maintenance Tool" FontSize="30" />
+
+        <!-- メイン領域 -->
+        <Grid Grid.Row="1" Padding="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左上 -->
+            <Grid Grid.Row="0" Grid.Column="0">
+                <Button
+                    x:Name="UpdateListButton"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Margin="0,5"
+                    Click="UpdateListButton_Click">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                Margin="0,0,8,0"
+                                Text="リストを更新する"
+                                Foreground="LightGreen">
+                                <TextBlock.Resources>
+                                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+                                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+                                </TextBlock.Resources>
+                            </TextBlock>
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE895;" Foreground="LightGreen"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+            </Grid>
+
+            <!-- 左下 -->
+            <Grid Grid.Row="1" Grid.Column="0">
+                <ListBox
+                    SelectionMode="Single"
+                    HorizontalContentAlignment="Stretch"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ItemTemplate="{StaticResource ListItemTemplate}"
+                    ItemsSource="{x:Bind ViewModel.Items}" 
+                    SelectedItem="{x:Bind ViewModel.SelectedItem, Mode=TwoWay}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="4,4,12,4"/>
+                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Grid>
+
+            <!-- 右上 -->
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Padding="12,5">
+                <Button
+                    x:Name="SqlServerConnectInfoButton"
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Content="SQLServer接続情報"
+                    Height="40"
+                    Click="SqlServerConnectInfoButton_Click" />
+                <TeachingTip
+                    x:Name="SqlServerConnectTeachingTip"
+                    PreferredPlacement="LeftTop"
+                    Target="{x:Bind SqlServerConnectInfoButton}">
+                    <TeachingTip.Content>
+                        <ContentControl
+                            Content="{x:Bind ViewModel.SsConnectInfo, Mode=OneWay}" 
+                            ContentTemplate="{StaticResource SqlServerConnectInfoTemplate}" />
+                    </TeachingTip.Content>
+                </TeachingTip>
+                <Button
+                    x:Name="SharePointConnectInfoButton"
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Content="SharePoint接続情報"
+                    Height="40"
+                    Click="SharePointConnectInfoButton_Click" />
+                <TeachingTip
+                    x:Name="SharePointConnectTeachingTip"
+                    PreferredPlacement="BottomLeft"
+                    Target="{x:Bind SharePointConnectInfoButton}">
+                    <TeachingTip.Content>
+                        <ContentControl
+                            Content="{x:Bind ViewModel.SpConnectInfo, Mode=OneWay}" 
+                            ContentTemplate="{StaticResource SharePointConnectInfoTemplate}" />
+                    </TeachingTip.Content>
+                </TeachingTip>
+            </StackPanel>
+
+            <!-- 右下 -->
+            <Grid Grid.Row="1" Grid.Column="1">
+                <!-- リスト選択あり -->
+                <Grid Visibility="{x:Bind ViewModel.IsItemNonSelected, Mode=OneWay}">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        TextAlignment="Center"
+                        Text="Select an item from the list."
+                        FontSize="24"
+                        Margin="0,0,0,80" />
+                </Grid>
+
+                <!-- リスト選択なし -->
+                <Grid Visibility="{x:Bind ViewModel.IsItemSelected, Mode=OneWay}" Margin="10,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <ScrollViewer>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ContentControl
+                                Grid.Row="0"
+                                Content="{x:Bind ViewModel.SelectedItem.Info, Mode=OneWay}" 
+                                ContentTemplate="{StaticResource TableInfoTemplate}" />
+                            <ContentControl
+                                Grid.Row="1"
+                                Content="{x:Bind ViewModel.SelectedItem.Status, Mode=OneWay}" 
+                                ContentTemplate="{StaticResource SpsStatusTemplate}" />
+                            <StackPanel Grid.Row="2" Orientation="Horizontal">
+                                <ContentControl
+                                    Visibility="{x:Bind ViewModel.IsDispSqlServerDataset, Mode=OneWay}"
+                                    Content="{x:Bind ViewModel.SelectedItem.SsDataset, Mode=OneWay}" 
+                                    ContentTemplate="{StaticResource SsDatasetTemplate}" />
+                                <ContentControl
+                                    Visibility="{x:Bind ViewModel.IsDispSharePointDataset, Mode=OneWay}"
+                                    Content="{x:Bind ViewModel.SelectedItem.SpDataset, Mode=OneWay}" 
+                                    ContentTemplate="{StaticResource SpDatasetTemplate}" />
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <Grid Grid.Row="1">
+                        <StackPanel
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Orientation="Horizontal">
+                            <Button
+                                x:Name="DeleteSharePointListRecordsButton"
+                                ToolTipService.ToolTip="選択しているSharePointリストの全レコードを削除します。"
+                                IsEnabled="{x:Bind ViewModel.CanDeleteSharePointList, Mode=OneWay}"
+                                Click="DeleteSharePointListRecordsButton_Click">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="5,0"
+                                            Text="全レコード削除"
+                                            Foreground="Salmon">
+                                            <TextBlock.Resources>
+                                                <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+                                                <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+                                                <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+                                                <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+                                            </TextBlock.Resources>
+                                        </TextBlock>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" Foreground="Salmon"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                            <Button
+                                Margin="10,0,0,0"
+                                ToolTipService.ToolTip="選択しているSharePointリストの出力先フォルダを開きます。"
+                                Command="{x:Bind ViewModel.OpenSpOutputDirCommand, Mode=OneWay}">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="5,0"
+                                            Text="出力先フォルダを開く"
+                                            Foreground="LightBlue">
+                                            <TextBlock.Resources>
+                                                <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+                                                <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+                                                <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+                                                <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+                                            </TextBlock.Resources>
+                                        </TextBlock>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xED25;" Foreground="LightBlue"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Orientation="Horizontal">
+                            <Button
+                                x:Name="SynchronizeUpdatedRecordsButton"
+                                Content="同期開始"
+                                FontSize="18"
+                                Width="120"
+                                Height="60"
+                                IsEnabled="{x:Bind ViewModel.CanSynchronizeUpdatedRecords, Mode=OneWay}"
+                                Click="SynchronizeUpdatedRecordsButton_Click" />
+                        </StackPanel>
+                    </Grid>
+
+                    <HyperlinkButton
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="5"
+                        Command="{x:Bind ViewModel.CloseCommand, Mode=OneWay}">
+                        <HyperlinkButton.Content>
+                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE711;" Foreground="Gray" FontWeight="Bold"/>
+                        </HyperlinkButton.Content>
+                    </HyperlinkButton>
+                </Grid>
+
+                <!-- インフォ（最前面に表示） -->
+                <StackPanel Grid.Row="0" VerticalAlignment="Bottom">
+                    <!-- SharePoint接続中 -->
+                    <InfoBar
+                        x:Name="SpConnectingInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Informational"
+                        Title="接続中"
+                        Message="SharePoint に接続しています..." />
+                    <!-- SharePoint接続成功 -->
+                    <InfoBar
+                        x:Name="SpSuccessInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Success"
+                        Title="接続成功"
+                        Message="SharePoint に接続されました。" />
+                    <!-- SharePoint接続失敗 -->
+                    <InfoBar
+                        x:Name="SpErrorInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Severity="Error"
+                        Title="接続失敗"
+                        Message="SharePoint に接続できませんでした。" />
+                    <!-- SqlServer接続中 -->
+                    <InfoBar
+                        x:Name="SsConnectingInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Informational"
+                        Title="接続中"
+                        Message="SqlServer に接続しています..." />
+                    <!-- SqlServer接続成功 -->
+                    <InfoBar
+                        x:Name="SsSuccessInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Success"
+                        Title="接続成功"
+                        Message="SqlServer に接続されました。" />
+                    <!-- SqlServer接続失敗 -->
+                    <InfoBar
+                        x:Name="SsErrorInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Severity="Error"
+                        Title="接続失敗"
+                        Message="SqlServer に接続できませんでした。" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
