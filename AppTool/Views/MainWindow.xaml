@@ -191,6 +191,7 @@
                                 CornerRadius="4"
                                 Foreground="{ThemeResource AccentFillColorDefaultBrush}"
                                 Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+                                IsIndeterminate="{x:Bind ProgressIndeterminate, Mode=OneWay}"
                                 Value="{x:Bind ProgressValue, Mode=OneWay}"
                                 Visibility="{x:Bind ProgressVisibility, Mode=OneWay}"/>
                         </StackPanel>
@@ -202,6 +203,24 @@
                         </InfoBadge>
                     </Grid>
                 </Border>
+            </DataTemplate>
+
+            <!-- 接続状態 -->
+            <DataTemplate x:Key="ConnectStatusTemplate" x:DataType="m:ConnectStatus">
+                <StackPanel Orientation="Horizontal">
+                    <Border
+                        Margin="0,0,8,0"
+                        Width="12" 
+                        Height="12" 
+                        Background="{x:Bind StatusIndicatorBrush, Mode=OneWay}" 
+                        CornerRadius="6"/>
+                    <TextBlock
+                        Text="{x:Bind ServerName, Mode=OneWay}" 
+                        FontSize="14"/>
+                    <TextBlock
+                        Text="{x:Bind ConnectionStatusText, Mode=OneWay}" 
+                        FontSize="14"/>
+                </StackPanel>
             </DataTemplate>
 
             <!-- SQLServer接続情報 -->
@@ -338,6 +357,7 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"
                     Margin="0,5"
+                    IsEnabled="{x:Bind ViewModel.CanUpdateList, Mode=OneWay}"
                     Click="UpdateListButton_Click">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
@@ -383,11 +403,15 @@
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Padding="12,5">
                 <Button
                     x:Name="SqlServerConnectInfoButton"
-                    Margin="10,0"
                     VerticalAlignment="Center"
-                    Content="SQLServer接続情報"
+                    Margin="0,0,8,0"
+                    Background="Transparent" 
+                    BorderThickness="0" 
+                    Padding="12,8"
                     Height="40"
-                    Click="SqlServerConnectInfoButton_Click" />
+                    Content="{x:Bind ViewModel.SsConnectInfo, Mode=OneWay}"
+                    ContentTemplate="{StaticResource ConnectStatusTemplate}"
+                    Click="SqlServerConnectInfoButton_Click"/>
                 <TeachingTip
                     x:Name="SqlServerConnectTeachingTip"
                     PreferredPlacement="LeftTop"
@@ -400,10 +424,13 @@
                 </TeachingTip>
                 <Button
                     x:Name="SharePointConnectInfoButton"
-                    Margin="10,0"
                     VerticalAlignment="Center"
-                    Content="SharePoint接続情報"
+                    Background="Transparent" 
+                    BorderThickness="0" 
+                    Padding="12,8"
                     Height="40"
+                    Content="{x:Bind ViewModel.SpConnectInfo, Mode=OneWay}"
+                    ContentTemplate="{StaticResource ConnectStatusTemplate}"
                     Click="SharePointConnectInfoButton_Click" />
                 <TeachingTip
                     x:Name="SharePointConnectTeachingTip"
@@ -470,15 +497,12 @@
                             VerticalAlignment="Bottom"
                             Orientation="Horizontal">
                             <Button
-                                x:Name="DeleteSharePointListRecordsButton"
-                                ToolTipService.ToolTip="選択しているSharePointリストの全レコードを削除します。"
-                                IsEnabled="{x:Bind ViewModel.CanDeleteSharePointList, Mode=OneWay}"
-                                Click="DeleteSharePointListRecordsButton_Click">
+                                ToolTipService.ToolTip="全レコードを削除します。">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock
                                             Margin="5,0"
-                                            Text="全レコード削除"
+                                            Text="全レコード削除..."
                                             Foreground="Salmon">
                                             <TextBlock.Resources>
                                                 <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
@@ -490,16 +514,30 @@
                                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74D;" Foreground="Salmon"/>
                                     </StackPanel>
                                 </Button.Content>
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <StackPanel>
+                                            <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="対象を選択してください。" Margin="0,0,0,12" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Content="SqlServer" IsEnabled="False"/>
+                                                <Button
+                                                    x:Name="DeleteSharePointListRecordsButton"
+                                                    Content="SharePoint"
+                                                    IsEnabled="{x:Bind ViewModel.CanDeleteSharePointList, Mode=OneWay}"
+                                                    Click="DeleteSharePointListRecordsButton_Click"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Flyout>
+                                </Button.Flyout>
                             </Button>
                             <Button
                                 Margin="10,0,0,0"
-                                ToolTipService.ToolTip="選択しているSharePointリストの出力先フォルダを開きます。"
-                                Command="{x:Bind ViewModel.OpenSpOutputDirCommand, Mode=OneWay}">
+                                ToolTipService.ToolTip="出力先フォルダを開きます。">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock
                                             Margin="5,0"
-                                            Text="出力先フォルダを開く"
+                                            Text="出力先フォルダを開く..."
                                             Foreground="LightBlue">
                                             <TextBlock.Resources>
                                                 <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
@@ -511,6 +549,17 @@
                                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xED25;" Foreground="LightBlue"/>
                                     </StackPanel>
                                 </Button.Content>
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <StackPanel>
+                                            <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="対象を選択してください。" Margin="0,0,0,12" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Content="SqlServer" Command="{x:Bind ViewModel.OpenSsOutputDirCommand, Mode=OneWay}"/>
+                                                <Button Content="SharePoint" Command="{x:Bind ViewModel.OpenSpOutputDirCommand, Mode=OneWay}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Flyout>
+                                </Button.Flyout>
                             </Button>
                         </StackPanel>
                         <StackPanel
@@ -541,32 +590,6 @@
 
                 <!-- インフォ（最前面に表示） -->
                 <StackPanel Grid.Row="0" VerticalAlignment="Bottom">
-                    <!-- SharePoint接続中 -->
-                    <InfoBar
-                        x:Name="SpConnectingInfoBar"
-                        IsOpen="True"
-                        Visibility="Collapsed"
-                        Opacity="1"
-                        Severity="Informational"
-                        Title="接続中"
-                        Message="SharePoint に接続しています..." />
-                    <!-- SharePoint接続成功 -->
-                    <InfoBar
-                        x:Name="SpSuccessInfoBar"
-                        IsOpen="True"
-                        Visibility="Collapsed"
-                        Opacity="1"
-                        Severity="Success"
-                        Title="接続成功"
-                        Message="SharePoint に接続されました。" />
-                    <!-- SharePoint接続失敗 -->
-                    <InfoBar
-                        x:Name="SpErrorInfoBar"
-                        IsOpen="True"
-                        Visibility="Collapsed"
-                        Severity="Error"
-                        Title="接続失敗"
-                        Message="SharePoint に接続できませんでした。" />
                     <!-- SqlServer接続中 -->
                     <InfoBar
                         x:Name="SsConnectingInfoBar"
@@ -590,9 +613,37 @@
                         x:Name="SsErrorInfoBar"
                         IsOpen="True"
                         Visibility="Collapsed"
+                        Opacity="1"
                         Severity="Error"
                         Title="接続失敗"
                         Message="SqlServer に接続できませんでした。" />
+                    <!-- SharePoint接続中 -->
+                    <InfoBar
+                        x:Name="SpConnectingInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Informational"
+                        Title="接続中"
+                        Message="SharePoint に接続しています..." />
+                    <!-- SharePoint接続成功 -->
+                    <InfoBar
+                        x:Name="SpSuccessInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Success"
+                        Title="接続成功"
+                        Message="SharePoint に接続されました。" />
+                    <!-- SharePoint接続失敗 -->
+                    <InfoBar
+                        x:Name="SpErrorInfoBar"
+                        IsOpen="True"
+                        Visibility="Collapsed"
+                        Opacity="1"
+                        Severity="Error"
+                        Title="接続失敗"
+                        Message="SharePoint に接続できませんでした。" />
                 </StackPanel>
             </Grid>
         </Grid>

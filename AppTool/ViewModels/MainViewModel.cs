@@ -33,6 +33,7 @@ public partial class MainViewModel : ObservableObject
             AccessPoint = "????\\????",
             DataBase = "DEV"
         };
+        ssConnectInfo.PropertyChanged += SsConnectInfo_PropertyChanged;
 
         spConnectInfo = new SharePointConnectInfo()
         {
@@ -40,6 +41,7 @@ public partial class MainViewModel : ObservableObject
             UserName = "????",
             Password = "????",
         };
+        spConnectInfo.PropertyChanged += SpConnectInfo_PropertyChanged;
 
         Items.CollectionChanged += Items_CollectionChanged;
 
@@ -68,26 +70,59 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    private void SsConnectInfo_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SqlServerConnectInfo.IsConnected))
+        {
+            OnPropertyChanged(nameof(CanUpdateList));
+            OnPropertyChanged(nameof(CanSynchronizeUpdatedRecords));
+        }
+    }
+
+    private void SpConnectInfo_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SharePointConnectInfo.IsConnected))
+        {
+            OnPropertyChanged(nameof(CanUpdateList));
+            OnPropertyChanged(nameof(CanDeleteSharePointList));
+            OnPropertyChanged(nameof(CanSynchronizeUpdatedRecords));
+        }
+    }
+
     private void Items_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems != null)
         {
             foreach (SpsItemViewModel item in e.NewItems)
             {
-                item.Status.PropertyChanged += Item_PropertyChanged;
+                item.PropertyChanged += SpsItemViewModel_PropertyChanged;
+                item.Status.PropertyChanged += SpsItemViewModelStatus_PropertyChanged;
             }
         }
         if (e.OldItems != null)
         {
             foreach (SpsItemViewModel item in e.OldItems)
             {
-                item.Status.PropertyChanged -= Item_PropertyChanged;
+                item.PropertyChanged -= SpsItemViewModel_PropertyChanged;
+                item.Status.PropertyChanged -= SpsItemViewModelStatus_PropertyChanged;
             }
         }
         OnPropertyChanged(nameof(CanUpdateList));
     }
 
-    private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void SpsItemViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SpsItemViewModel.SsDataset))
+        {
+            OnPropertyChanged(nameof(IsDispSqlServerDataset));
+        }
+        if (e.PropertyName == nameof(SpsItemViewModel.SpDataset))
+        {
+            OnPropertyChanged(nameof(IsDispSharePointDataset));
+        }
+    }
+
+    private void SpsItemViewModelStatus_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SpsItemViewModel.Status.CreatedDate))
         {
@@ -98,6 +133,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedItemChanged(SpsItemViewModel? oldValue, SpsItemViewModel? newValue)
     {
         CloseCommand.NotifyCanExecuteChanged();
+        OpenSsOutputDirCommand.NotifyCanExecuteChanged();
         OpenSpOutputDirCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IsItemSelected));
         OnPropertyChanged(nameof(IsItemNonSelected));
@@ -115,16 +151,22 @@ public partial class MainViewModel : ObservableObject
 
     public bool IsDispSharePointDataset => SelectedItem?.SpDataset != null;
 
-    public bool CanUpdateList => Items.Any();
+    public bool CanUpdateList => Items.Any() && SsConnectInfo.IsConnected && SpConnectInfo.IsConnected;
 
-    public bool CanDeleteSharePointList => SelectedItem != null;
+    public bool CanDeleteSharePointList => SelectedItem != null && SpConnectInfo.IsConnected;
 
-    public bool CanSynchronizeUpdatedRecords => SelectedItem != null && SelectedItem?.IsWarning == true;
+    public bool CanSynchronizeUpdatedRecords => SelectedItem != null && SelectedItem?.IsWarning == true && SsConnectInfo.IsConnected && SpConnectInfo.IsConnected;
 
     [RelayCommand(CanExecute = nameof(IsItemSelected))]
     public void OnClose()
     {
         SelectedItem = null;
+    }
+
+    [RelayCommand(CanExecute = nameof(IsItemSelected))]
+    public void OnOpenSsOutputDir()
+    {
+        Process.Start("explorer.exe", AppDomain.CurrentDomain.BaseDirectory);
     }
 
     [RelayCommand(CanExecute = nameof(IsItemSelected))]

@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Graphics;
 
@@ -153,17 +154,36 @@ namespace AppTool
             SharePointConnectTeachingTip.IsOpen = true;
         }
 
+        private void SqlServerConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            TrySqlServerConnectAsync(ViewModel.SsConnectInfo);
+        }
+
+        private void SharePointConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            TrySharePointConnectAsync(ViewModel.SpConnectInfo);
+        }
+
         private async void TrySqlServerConnectAsync(SqlServerConnectInfo connectInfo)
         {
             connectInfo.IsConnecting = true;
 
+            // ä˘ë∂ÇÃStoryboardÇí‚é~
+            var fadeOutStoryboard = (Storyboard)RootGrid.Resources["SsFadeOutStoryboard"];
+            fadeOutStoryboard.Stop();
+
+            // InfoBarÇÃèÛë‘ÇÉäÉZÉbÉg
+            SsSuccessInfoBar.IsOpen = true;
             SsSuccessInfoBar.Visibility = Visibility.Collapsed;
             SsSuccessInfoBar.Opacity = 1;
+            SsErrorInfoBar.IsOpen = true;
             SsErrorInfoBar.Visibility = Visibility.Collapsed;
             SsErrorInfoBar.Opacity = 1;
+
+            // ê⁄ë±íÜÇÃï\é¶
+            SsConnectingInfoBar.IsOpen = true;
             SsConnectingInfoBar.Visibility = Visibility.Visible;
             SsConnectingInfoBar.Opacity = 1;
-
             SsConnectingPulseStoryboard.Begin();
 
             bool result = await Task.Run(() =>
@@ -173,25 +193,29 @@ namespace AppTool
             });
 
             SsConnectingPulseStoryboard.Stop();
-
             SsConnectingInfoBar.Visibility = Visibility.Collapsed;
+
+            connectInfo.IsConnecting = false;
 
             if (result)
             {
+                // ê¨å˜éûÇÃï\é¶
                 SsSuccessInfoBar.Visibility = Visibility.Visible;
-                SsSuccessInfoBar.Opacity = 1;
 
-                var storyboard = (Storyboard)RootGrid.Resources["SsFadeOutStoryboard"];
-                storyboard.Begin();
-                storyboard.Completed += (sender, e) =>
-                {
-                    connectInfo.IsConnecting = false;
-                };
+                fadeOutStoryboard.Begin();
+
+                connectInfo.IsConnected = true;
+                connectInfo.IsConnectionFailed = false;
+                Debug.WriteLine("SQLServerê⁄ë±ê¨å˜");
             }
             else
             {
+                // é∏îséûÇÃï\é¶
                 SsErrorInfoBar.Visibility = Visibility.Visible;
-                connectInfo.IsConnecting = false;
+
+                connectInfo.IsConnected = false;
+                connectInfo.IsConnectionFailed = true;
+                Debug.WriteLine("SQLServerê⁄ë±é∏îs");
             }
         }
 
@@ -204,56 +228,60 @@ namespace AppTool
         {
             connectInfo.IsConnecting = true;
 
+            // ä˘ë∂ÇÃStoryboardÇí‚é~
+            var fadeOutStoryboard = (Storyboard)RootGrid.Resources["SpFadeOutStoryboard"];
+            fadeOutStoryboard.Stop();
+
+            // InfoBarÇÃèÛë‘ÇÉäÉZÉbÉg
+            SpSuccessInfoBar.IsOpen = true;
             SpSuccessInfoBar.Visibility = Visibility.Collapsed;
             SpSuccessInfoBar.Opacity = 1;
+            SpErrorInfoBar.IsOpen = true;
             SpErrorInfoBar.Visibility = Visibility.Collapsed;
             SpErrorInfoBar.Opacity = 1;
+
+            // ê⁄ë±íÜÇÃï\é¶
+            SpConnectingInfoBar.IsOpen = true;
             SpConnectingInfoBar.Visibility = Visibility.Visible;
             SpConnectingInfoBar.Opacity = 1;
-
             SpConnectingPulseStoryboard.Begin();
 
             bool result = await Task.Run(() =>
             {
-                Task.Delay(2000).Wait(); // ñÕã[ê⁄ë±èàóù
+                Task.Delay(3000).Wait(); // ñÕã[ê⁄ë±èàóù
                 return new Random().Next(2) == 0; // ê¨å˜ or é∏îs
             });
 
             SpConnectingPulseStoryboard.Stop();
-
             SpConnectingInfoBar.Visibility = Visibility.Collapsed;
+
+            connectInfo.IsConnecting = false;
 
             if (result)
             {
+                // ê¨å˜éûÇÃï\é¶
                 SpSuccessInfoBar.Visibility = Visibility.Visible;
 
-                var storyboard = (Storyboard)RootGrid.Resources["SpFadeOutStoryboard"];
-                storyboard.Begin();
-                storyboard.Completed += (sender, e) =>
-                {
-                    connectInfo.IsConnecting = false;
-                };
+                fadeOutStoryboard.Begin();
+
+                connectInfo.IsConnected = true;
+                connectInfo.IsConnectionFailed = false;
+                Debug.WriteLine("SQLServerê⁄ë±ê¨å˜");
             }
             else
             {
+                // é∏îséûÇÃï\é¶
                 SpErrorInfoBar.Visibility = Visibility.Visible;
-                connectInfo.IsConnecting = false;
+
+                connectInfo.IsConnected = false;
+                connectInfo.IsConnectionFailed = true;
+                Debug.WriteLine("SQLServerê⁄ë±é∏îs");
             }
         }
 
         private void SpFadeOutStoryboard_Completed(object sender, object e)
         {
             SpSuccessInfoBar.Visibility = Visibility.Collapsed;
-        }
-
-        private void SqlServerConnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            TrySqlServerConnectAsync(ViewModel.SsConnectInfo);
-        }
-
-        private void SharePointConnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            TrySharePointConnectAsync(ViewModel.SpConnectInfo);
         }
     }
 }

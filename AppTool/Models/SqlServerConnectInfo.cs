@@ -9,4 +9,6 @@ public partial class SqlServerConnectInfo : ConnectStatus
 
     [ObservableProperty]
     private string? dataBase;
+
+    public override string ServerName => "SQLServer";
 }

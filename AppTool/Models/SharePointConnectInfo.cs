@@ -12,4 +12,6 @@ public partial class SharePointConnectInfo : ConnectStatus
 
     [ObservableProperty]
     private string? password;
+
+    public override string ServerName => "SharePoint";
 }

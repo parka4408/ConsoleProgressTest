@@ -17,6 +17,9 @@ public partial class SpsItemViewModel : ObservableObject
     private SharePointDataset? spDataset;
 
     [ObservableProperty]
+    private bool progressIndeterminate;
+
+    [ObservableProperty]
     private int progressValue;
 
     [ObservableProperty]
@@ -50,6 +53,7 @@ public partial class SpsItemViewModel : ObservableObject
 
         ProgressValue = 0;
         ProgressVisibility = Visibility.Collapsed;
+        ProgressIndeterminate = false;
     }
 
     public void ProgressingRender(int value)
