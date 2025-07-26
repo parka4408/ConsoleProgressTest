@@ -112,6 +112,10 @@ public partial class MainViewModel : ObservableObject
 
     private void SpsItemViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(SpsItemViewModel.IsWarning))
+        {
+            OnPropertyChanged(nameof(CanSynchronizeUpdatedRecords));
+        }
         if (e.PropertyName == nameof(SpsItemViewModel.SsDataset))
         {
             OnPropertyChanged(nameof(IsDispSqlServerDataset));

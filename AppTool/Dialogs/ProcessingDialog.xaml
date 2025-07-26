@@ -11,13 +11,13 @@
     <StackPanel Spacing="16">
         <TextBlock
             x:Name="ContentTextBlock"
-            Text="{x:Bind ProgressingContent}"
+            Text="{x:Bind ContentText}"
             TextWrapping="Wrap"
             TextTrimming="CharacterEllipsis"
             MaxLines="4"
             Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
         <TextBlock
-            x:Name="StatusTextBlock"
+            x:Name="ProgressingTextBlock"
             HorizontalAlignment="Center"
             Text=" - "
             FontFamily="BIZ UD明朝"
@@ -33,5 +33,13 @@
             CornerRadius="4"
             Foreground="{ThemeResource AccentFillColorDefaultBrush}"
             Background="{ThemeResource ControlAltFillColorSecondaryBrush}" />
+        <TextBlock
+            x:Name="StatusTextBlock"
+            HorizontalAlignment="Left"
+            TextWrapping="Wrap"
+            TextTrimming="CharacterEllipsis"
+            MaxLines="4"
+            Visibility="Collapsed"
+            Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
     </StackPanel>
 </ContentDialog>

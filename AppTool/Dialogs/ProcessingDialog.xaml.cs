@@ -8,7 +8,7 @@ namespace AppTool.Dialogs;
 
 public sealed partial class ProcessingDialog : ContentDialog
 {
-    public string ProgressingContent { get; set; } = "処理中...";
+    public string? ContentText { get; set; }
     public int? MaxValue { get; set; }
 
     public ProcessingDialog()
@@ -37,27 +37,40 @@ public sealed partial class ProcessingDialog : ContentDialog
                 new Progress<int>(ProgressingPercentageRender) : new Progress<int>(ProgressingCountRender);
             var result = await processer.ExecuteAsync(progress);
 
-            StatusTextBlock.Text += " 完了しました。";
-            await Task.Delay(1000);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                StatusTextBlock.Text = $"全ての処理が正常に終了しました。";
+
+                PrimaryButtonText = "OK";
+                IsPrimaryButtonEnabled = true;
+            });
+
             tcs.TrySetResult(result);
         }
         catch (Exception ex)
         {
-            StatusTextBlock.Text += $" エラー: {ex.Message}";
-            await Task.Delay(1000);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                StatusTextBlock.Text = $"例外発生: {ex.Message}";
+
+                PrimaryButtonText = "閉じる";
+                IsPrimaryButtonEnabled = true;
+            });
+
             tcs.TrySetException(ex);
-        }
-        finally
-        {
-            Hide();
         }
     }
 
     private void ProgressingPercentageRender(int value)
     {
-        if (!MaxValue.HasValue) throw new Exception("想定外エラー");
+        if (!MaxValue.HasValue)
+        {
+            throw new ArgumentException("MaxValueが設定されていないため、パーセンテージ表示ができません。");
+        }
 
-        double ratio = (double)((double)value / MaxValue);
+        double ratio = (double)value / MaxValue.Value;
 
         var sb = new StringBuilder();
         sb.AppendFormat("{0} / {1} ", value, MaxValue);
@@ -65,7 +78,7 @@ public sealed partial class ProcessingDialog : ContentDialog
         sb.AppendFormat("{0,4:##0.0}%", ratio * 100);
         sb.Append(')');
 
-        StatusTextBlock.Text = sb.ToString();
+        ProgressingTextBlock.Text = sb.ToString();
         ContentProgressBar.Value = ratio * 100;
     }
 
@@ -74,7 +87,7 @@ public sealed partial class ProcessingDialog : ContentDialog
         var sb = new StringBuilder();
         sb.AppendFormat("{0} 件", value);
 
-        StatusTextBlock.Text = sb.ToString();
+        ProgressingTextBlock.Text = sb.ToString();
         ContentProgressBar.IsIndeterminate = true;
     }
 }

@@ -81,7 +81,7 @@ namespace AppTool
                         Title = "同期中",
                         XamlRoot = Content.XamlRoot,
                         MaxValue = 15000,
-                        ProgressingContent = $"'{selectedItem.Info.Name}' の更新レコードを同期中...",
+                        ContentText = $"'{selectedItem.Info.Name}' の更新レコードを同期中...",
                     };
 
                     var logger = new ProcessingLogger();
@@ -132,7 +132,7 @@ namespace AppTool
                         Title = "削除中",
                         XamlRoot = Content.XamlRoot,
                         MaxValue = 15000,
-                        ProgressingContent = $"SharePointリスト '{selectedItem.Info.Name}' の全レコード削除中...",
+                        ContentText = $"SharePointリスト '{selectedItem.Info.Name}' の全レコード削除中...",
                     };
 
                     var logger = new ProcessingLogger();
