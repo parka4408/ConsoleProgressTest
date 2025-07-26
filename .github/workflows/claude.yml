@@ -13,15 +13,28 @@ on:
 jobs:
   claude-code-action:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+        (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+      ) &&
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'COLLABORATOR' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.review.author_association == 'OWNER' ||
+        github.event.review.author_association == 'COLLABORATOR' ||
+        github.event.review.author_association == 'MEMBER' ||
+        github.event.issue.author_association == 'OWNER' ||
+        github.event.issue.author_association == 'COLLABORATOR' ||
+        github.event.issue.author_association == 'MEMBER'
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write  # 変更: writeに変更（Claudeがコメントできるように）
+      issues: write         # 変更: writeに変更（Claudeがコメントできるように）
       id-token: write
     steps:
       - name: Checkout repository
@@ -36,13 +49,32 @@ jobs:
           # Or use OAuth token instead:
           # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           timeout_minutes: "60"
+          
+          # セキュリティ設定: 使用可能なツールを制限
+          allowed_tools: |
+            Edit
+            Replace
+            View
+            Create
+            ListFiles
+          
+          # セキュリティ設定: 危険なツールを無効化
+          disallowed_tools: |
+            Bash
+            DeleteFile
+            KillTask
+          
+          # セキュリティ設定: 最大ターン数を制限
+          max_turns: 5
+          
           # mode: tag  # Default: responds to @claude mentions
-          # Optional: Restrict network access to specific domains only
-          # experimental_allowed_domains: |
-          #   .anthropic.com
-          #   .github.com
-          #   api.github.com
-          #   .githubusercontent.com
-          #   bun.sh
-          #   registry.npmjs.org
-          #   .blob.core.windows.net
+          
+          # セキュリティ設定: ネットワークアクセスを制限
+          experimental_allowed_domains: |
+            .anthropic.com
+            .github.com
+            api.github.com
+            .githubusercontent.com
+            registry.npmjs.org
+            cdn.jsdelivr.net
+            unpkg.com
