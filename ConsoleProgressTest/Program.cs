@@ -17,12 +17,12 @@ namespace ConsoleProgressTest
             Console.WriteLine("処理開始");
             using (var prog = new ProgressReporter(totalCount, logger: logger))
             {
-                LognTask(totalCount, prog, logger);
+                LongTask(totalCount, prog, logger);
             }
             Console.WriteLine("処理終了");
         }
 
-        private static void LognTask(int totalCount, IProgress<int> progress = null, ILogger logger = null)
+        private static void LongTask(int totalCount, IProgress<int> progress = null, ILogger logger = null)
         {
             var threadNum = 10;
             var batchNum = totalCount / threadNum;

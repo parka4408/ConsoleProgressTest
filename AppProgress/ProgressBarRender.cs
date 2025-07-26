@@ -10,6 +10,7 @@ namespace AppProgress
         private readonly ProgressBarOptions _options;
         private int _slidePosition = 0;
         private readonly int _blockSize = 5;
+        private readonly object _lock = new object();
 
         public ProgressBarRender(ProgressBarOptions options)
         {
@@ -40,25 +41,26 @@ namespace AppProgress
             {
                 var maxPos = _options.BarWidth - _blockSize;
 
-                // スライド位置更新（右端に行ったら左端へ戻す）
-                _slidePosition = (_slidePosition + 1) % (maxPos + 1);
+                // スレッドセーフな位置更新
+                lock (_lock)
+                {
+                    // スライド位置更新（右端に行ったら左端へ戻す）
+                    _slidePosition = (_slidePosition + 1) % (maxPos + 1);
+                }
 
-                var bar = new StringBuilder();
-                bar.Append('[');
+                sb.Append('[');
                 for (int i = 0; i < _options.BarWidth; i++)
                 {
                     if (i >= _slidePosition && i < _slidePosition + _blockSize)
                     {
-                        bar.Append(_options.CompletedChar);
+                        sb.Append(_options.CompletedChar);
                     }
                     else
                     {
-                        bar.Append(_options.IncompleteChar);
+                        sb.Append(_options.IncompleteChar);
                     }
                 }
-                bar.Append(']');
-
-                sb.Append(bar.ToString());
+                sb.Append(']');
             }
 
             // Count
