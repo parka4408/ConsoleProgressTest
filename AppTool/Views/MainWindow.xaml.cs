@@ -76,19 +76,20 @@ namespace AppTool
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    var processingdialog = new ProcessingDialog()
+                    using var processingdialog = new ProcessingDialog()
                     {
                         Title = "同期中",
-                        XamlRoot = Content.XamlRoot,
-                        MaxValue = 15000,
                         ContentText = $"'{selectedItem.Info.Name}' の更新レコードを同期中...",
+                        MaxValue = 15000,
+                        XamlRoot = Content.XamlRoot,
                     };
 
                     var logger = new ProcessingLogger();
-                    int func(IProgress<int> progress) => ViewModel.TestExecute(selectedItem.Info, progress, logger);
-                    var testProcesser = new DelegateProcesser<int, int>(func);
 
-                    var totalCount = await processingdialog.RunAsync<int>(testProcesser);
+                    int totalCount = await processingdialog.RunAsync(progress =>
+                    {
+                        return ViewModel.TestExecute(selectedItem.Info, progress, logger);
+                    });
 
                     selectedItem.Status.Status = "更新済み";
                     selectedItem.Status.CreatedDate = DateTime.Now;
@@ -127,19 +128,27 @@ namespace AppTool
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    var processingdialog = new ProcessingDialog
+                    using var processingdialog = new ProcessingDialog
                     {
                         Title = "削除中",
-                        XamlRoot = Content.XamlRoot,
-                        MaxValue = 15000,
                         ContentText = $"SharePointリスト '{selectedItem.Info.Name}' の全レコード削除中...",
+                        MaxValue = 15000,
+                        XamlRoot = Content.XamlRoot,
                     };
 
                     var logger = new ProcessingLogger();
-                    int func(IProgress<int> progress) => ViewModel.TestExecute(selectedItem.Info, progress, logger);
-                    var testProcesser = new DelegateProcesser<int, int>(func);
 
-                    await processingdialog.RunAsync<int>(testProcesser);
+                    await processingdialog.RunAsync(progress =>
+                    {
+                        ViewModel.TestExecute(selectedItem.Info, progress, logger);
+                    });
+
+                    //using var processingdialog = new ProcessingDialog()
+                    //{
+                    //    XamlRoot = Content.XamlRoot,
+                    //};
+
+                    //var resultText = await ProcessingDialogTestHelper.RunTimeoutTest(processingdialog);
                 }
             }
         }
@@ -249,7 +258,8 @@ namespace AppTool
             bool result = await Task.Run(() =>
             {
                 Task.Delay(3000).Wait(); // 模擬接続処理
-                return new Random().Next(2) == 0; // 成功 or 失敗
+                //return new Random().Next(2) == 0; // 成功 or 失敗
+                return true;
             });
 
             SpConnectingPulseStoryboard.Stop();

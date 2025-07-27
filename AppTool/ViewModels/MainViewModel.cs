@@ -213,7 +213,7 @@ public partial class MainViewModel : ObservableObject
         return count;
     }
 
-    public async Task TestWithTasksAsync(ILogger ? logger = null)
+    public async Task TestWithTasksAsync(ILogger? logger = null)
     {
         int maxConcurrency = 5;
         int processedCount = 0;
