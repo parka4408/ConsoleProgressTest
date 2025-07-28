@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -66,8 +67,169 @@ public partial class MainViewModel : ObservableObject
 
         foreach (var item in sampleItems)
         {
+            item.MappingInfos.AddRange(CreateSampleMappingInfos(item.Name));
             Items.Add(new SpsItemViewModel(item));
         }
+    }
+
+    private List<MappingInfo> CreateSampleMappingInfos(string tableName)
+    {
+        return new List<MappingInfo>
+        {
+            new MappingInfo
+            {
+                DisplayName = "ID",
+                InternalName = $"{tableName}_ID",
+                DataType = "int",
+                IsRequired = true,
+                IsPrimaryKey = true,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "名前",
+                InternalName = $"{tableName}_Name",
+                DataType = "nvarchar(100)",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "コード",
+                InternalName = $"{tableName}_Code",
+                DataType = "varchar(20)",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = true
+            },
+            new MappingInfo
+            {
+                DisplayName = "説明",
+                InternalName = $"{tableName}_Description_XXXXXXXXX",
+                DataType = "nvarchar(500)",
+                IsRequired = true,
+                IsPrimaryKey = true,
+                IsAlternativeKey = true
+            },
+            new MappingInfo
+            {
+                DisplayName = "作成日",
+                InternalName = $"{tableName}_CreatedDate",
+                DataType = "datetime2",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "更新日",
+                InternalName = $"{tableName}_UpdatedDate",
+                DataType = "datetime2",
+                IsRequired = false,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "説明",
+                InternalName = $"{tableName}_Description_XXXXXXXXX",
+                DataType = "nvarchar(500)",
+                IsRequired = true,
+                IsPrimaryKey = true,
+                IsAlternativeKey = true
+            },
+            new MappingInfo
+            {
+                DisplayName = "作成日",
+                InternalName = $"{tableName}_CreatedDate",
+                DataType = "datetime2",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "更新日",
+                InternalName = $"{tableName}_UpdatedDate",
+                DataType = "datetime2",
+                IsRequired = false,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "名前",
+                InternalName = $"{tableName}_Name",
+                DataType = "nvarchar(100)",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "コード",
+                InternalName = $"{tableName}_Code",
+                DataType = "varchar(20)",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = true
+            },
+            new MappingInfo
+            {
+                DisplayName = "説明",
+                InternalName = $"{tableName}_Description_XXXXXXXXX",
+                DataType = "nvarchar(500)",
+                IsRequired = true,
+                IsPrimaryKey = true,
+                IsAlternativeKey = true
+            },
+            new MappingInfo
+            {
+                DisplayName = "作成日",
+                InternalName = $"{tableName}_CreatedDate",
+                DataType = "datetime2",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "更新日",
+                InternalName = $"{tableName}_UpdatedDate",
+                DataType = "datetime2",
+                IsRequired = false,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "説明",
+                InternalName = $"{tableName}_Description_XXXXXXXXX",
+                DataType = "nvarchar(500)",
+                IsRequired = true,
+                IsPrimaryKey = true,
+                IsAlternativeKey = true
+            },
+            new MappingInfo
+            {
+                DisplayName = "作成日",
+                InternalName = $"{tableName}_CreatedDate",
+                DataType = "datetime2",
+                IsRequired = true,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            },
+            new MappingInfo
+            {
+                DisplayName = "更新日",
+                InternalName = $"{tableName}_UpdatedDate",
+                DataType = "datetime2",
+                IsRequired = false,
+                IsPrimaryKey = false,
+                IsAlternativeKey = false
+            }
+        };
     }
 
     private void SsConnectInfo_PropertyChanged(object? sender, PropertyChangedEventArgs e)

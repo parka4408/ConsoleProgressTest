@@ -54,6 +54,223 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="カテゴリ：" FontWeight="SemiBold" Foreground="Gray" Margin="0,0,8,4"/>
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind Category}" Margin="0,0,0,4"/>
                         </Grid>
+
+                        <!-- 折り畳み可能なマッピング情報領域 -->
+                        <Expander IsExpanded="False">
+                            <Expander.Header>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon
+                                        FontFamily="Segoe MDL2 Assets" 
+                                        Glyph="&#xF0E2;" 
+                                        FontSize="14"
+                                        VerticalAlignment="Center"/>
+                                    <TextBlock
+                                        Grid.Column="1" 
+                                        Margin="10,0,10,2"
+                                        Text="SharePointマッピング情報" 
+                                        FontSize="16" 
+                                        FontWeight="SemiBold" 
+                                        VerticalAlignment="Center"
+                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                    <InfoBadge
+                                        Grid.Column="2" 
+                                        Value="{x:Bind MappingInfos.Count}"/>
+                                </Grid>
+                            </Expander.Header>
+
+                            <Border
+                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Margin="0,8,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border
+                                        Grid.Row="0"
+                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                        CornerRadius="8,8,0,0"
+                                        Padding="16,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="90"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="表示名" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                            <TextBlock Grid.Column="1" Text="内部名" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                            <TextBlock Grid.Column="2" Text="データ型" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                            <TextBlock Grid.Column="3" Text="属性" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- データ行 -->
+                                    <ScrollViewer Grid.Row="1" MaxHeight="300" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                        <ItemsRepeater ItemsSource="{x:Bind MappingInfos}">
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="m:MappingInfo">
+                                                    <Border
+                                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                                        BorderThickness="0,0,0,1"
+                                                        Padding="16,12">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="120"/>
+                                                                <ColumnDefinition Width="100"/>
+                                                                <ColumnDefinition Width="100"/>
+                                                                <ColumnDefinition Width="90"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- 表示名（文字数制限付き） -->
+                                                            <TextBlock
+                                                                Grid.Column="0"
+                                                                Padding="0,0,5,0"
+                                                                Text="{x:Bind DisplayName}" 
+                                                                FontSize="13" 
+                                                                FontWeight="Medium"
+                                                                VerticalAlignment="Center"
+                                                                TextTrimming="CharacterEllipsis"
+                                                                ToolTipService.ToolTip="{x:Bind DisplayName}"
+                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+
+                                                            <!-- 内部名（文字数制限付き） -->
+                                                            <TextBlock
+                                                                Grid.Column="1"
+                                                                Padding="0,0,5,0"
+                                                                Text="{x:Bind InternalName}" 
+                                                                FontSize="12" 
+                                                                FontFamily="Consolas"
+                                                                VerticalAlignment="Center"
+                                                                TextTrimming="CharacterEllipsis"
+                                                                ToolTipService.ToolTip="{x:Bind InternalName}"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                                                            <!-- データ型（文字数制限付き） -->
+                                                            <Border
+                                                                Grid.Column="2" 
+                                                                Background="{ThemeResource SystemFillColorSolidNeutralBackgroundBrush}"
+                                                                CornerRadius="4"
+                                                                Padding="6,3"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Center"
+                                                                MaxWidth="120">
+                                                                <TextBlock
+                                                                    Text="{x:Bind DataType}" 
+                                                                    FontSize="11" 
+                                                                    FontFamily="Consolas"
+                                                                    FontWeight="Medium"
+                                                                    TextTrimming="CharacterEllipsis"
+                                                                    ToolTipService.ToolTip="{x:Bind DataType}"
+                                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                            </Border>
+
+                                                            <!-- 属性バッジ（横並び） -->
+                                                            <Grid
+                                                                Grid.Column="3"
+                                                                HorizontalAlignment="Center" 
+                                                                VerticalAlignment="Center">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <Border
+                                                                    Grid.Column="0"
+                                                                    HorizontalAlignment="Center"
+                                                                    Background="#DC143C"
+                                                                    CornerRadius="2"
+                                                                    Padding="4,2"
+                                                                    Visibility="{x:Bind IsRequired}">
+                                                                    <TextBlock
+                                                                        Text="必須" 
+                                                                        FontSize="9" 
+                                                                        FontWeight="SemiBold"
+                                                                        Foreground="White"
+                                                                        HorizontalAlignment="Center"/>
+                                                                </Border>
+
+                                                                <FontIcon
+                                                                    Grid.Column="1"
+                                                                    FontFamily="Segoe MDL2 Assets"
+                                                                    Glyph="&#xE192;"
+                                                                    FontSize="15"
+                                                                    Foreground="Gold"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    Visibility="{x:Bind IsPrimaryKey}"/>
+
+                                                                <FontIcon
+                                                                    Grid.Column="2"
+                                                                    FontFamily="Segoe MDL2 Assets"
+                                                                    Glyph="&#xE192;"
+                                                                    FontSize="15"
+                                                                    Foreground="Orange"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    Visibility="{x:Bind IsAlternativeKey}"/>
+
+                                                                <!--<FontIcon
+                                                                    Grid.Column="2"
+                                                                    FontFamily="Segoe MDL2 Assets"
+                                                                    Glyph="&#xE73E;"
+                                                                    FontSize="12"
+                                                                    Foreground="Red"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    Visibility="{x:Bind IsRequired}"/>-->
+
+                                                                <!--<Border
+                                                                    Grid.Column="0"
+                                                                    HorizontalAlignment="Center"
+                                                                    Background="#FFD700"
+                                                                    CornerRadius="2"
+                                                                    Padding="4,2"
+                                                                    Visibility="{x:Bind IsPrimaryKey}">
+                                                                    <TextBlock
+                                                                        Text="PK" 
+                                                                        FontSize="9" 
+                                                                        FontWeight="Bold"
+                                                                        Foreground="Red"
+                                                                        HorizontalAlignment="Center"/>
+                                                                </Border>
+
+                                                                <Border
+                                                                    Grid.Column="1"
+                                                                    HorizontalAlignment="Center"
+                                                                    Background="#FF8C00"
+                                                                    CornerRadius="2"
+                                                                    Padding="4,2"
+                                                                    Visibility="{x:Bind IsAlternativeKey}">
+                                                                    <TextBlock
+                                                                        Text="ALT" 
+                                                                        FontSize="9" 
+                                                                        FontWeight="Bold"
+                                                                        Foreground="White"
+                                                                        HorizontalAlignment="Center"/>
+                                                                </Border>-->
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Expander>
+                        
                     </StackPanel>
                 </Border>
             </DataTemplate>
