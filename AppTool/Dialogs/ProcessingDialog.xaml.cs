@@ -1,5 +1,7 @@
-using Microsoft.UI.Xaml.Controls;
+ï»¿using Microsoft.UI.Xaml.Controls;
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,54 +9,113 @@ using Windows.System;
 
 namespace AppTool.Dialogs;
 
-public sealed partial class ProcessingDialog : ContentDialog, IDisposable
+public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INotifyPropertyChanged
 {
     /// <summary>
-    /// Å‘å’li–¢İ’è‚Ìê‡‚ÍŒ”ƒJƒEƒ“ƒg‚Ì‚İj
-    /// </summary>
-    public int? MaxValue { get; set; }
-
-    /// <summary>
-    /// ContentƒvƒƒpƒeƒB‚ÌƒI[ƒo[ƒ‰ƒCƒhiŠO•”‚©‚ç‚Ìİ’è‚ğ‹Ö~j
+    /// Contentãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®å¤–éƒ¨è¨­å®šã‚’ç¦æ­¢
     /// </summary>
     public new object Content { get; private set; }
 
-    // ƒJƒXƒ^ƒ}ƒCƒY‰Â”\‚ÈƒeƒLƒXƒg
-    public string ContentText { get; set; } = "ˆ—’†";
-    public string CancelButtonText { get; set; } = "ƒLƒƒƒ“ƒZƒ‹";
-    public string CompletedMessage { get; set; } = "‚·‚×‚Ä‚Ìˆ—‚ª³í‚ÉI—¹‚µ‚Ü‚µ‚½B";
-    public string CanceledMessage { get; set; } = "ˆ—‚ªƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ü‚µ‚½B";
-    public string TimeoutMessage { get; set; } = "ˆ—‚ªƒ^ƒCƒ€ƒAƒEƒg‚µ‚Ü‚µ‚½B";
+    // æœ€å¤§å€¤ï¼ˆè¨­å®šã‚ã‚Šï¼šé€²æ—ç‡ã‚’è¡¨ç¤ºã€è¨­å®šãªã—ï¼šä»¶æ•°ã‚«ã‚¦ãƒ³ãƒˆã®ã¿ï¼‰
+    public int? MaxValue { get; set; }
 
-    // ƒƒbƒNƒIƒuƒWƒFƒNƒg
+    // INotifyPropertyChangedå®Ÿè£…
+    public event PropertyChangedEventHandler? PropertyChanged;
+    
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    // ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚ºå¯èƒ½ãªãƒ†ã‚­ã‚¹ãƒˆ
+    private string _contentText = "å‡¦ç†ä¸­";
+    public string ContentText
+    {
+        get => _contentText;
+        set
+        {
+            if (_contentText != value)
+            {
+                _contentText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+    
+    public string CancelButtonText { get; set; } = "ã‚­ãƒ£ãƒ³ã‚»ãƒ«";
+    public string CompletedMessage { get; set; } = "ã™ã¹ã¦ã®å‡¦ç†ãŒæ­£å¸¸ã«çµ‚äº†ã—ã¾ã—ãŸã€‚";
+    public string CanceledMessage { get; set; } = "å‡¦ç†ãŒã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¾ã—ãŸã€‚";
+    public string TimeoutMessage { get; set; } = "å‡¦ç†ãŒã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã—ã¾ã—ãŸã€‚";
+
+    // ãƒ­ãƒƒã‚¯ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
     private readonly object _lock = new();
 
-    // ƒLƒƒƒ“ƒZƒ‹—p
+    // ã‚­ãƒ£ãƒ³ã‚»ãƒ«ç”¨
     private CancellationTokenSource? _cancellationTokenSource;
     private bool _isRunning = false;
 
-    // i’»XV‚ÌƒXƒƒbƒgƒŠƒ“ƒO—p
+    // é€²æ—æ›´æ–°ã®ã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°ç”¨
     private DateTime _lastProgressUpdate = DateTime.MinValue;
-    private const int ProgressUpdateIntervalMs = 50; // 50msŠÔŠu‚ÅXV§ŒÀ
+    private const int ProgressUpdateIntervalMs = 50; // 50msé–“éš”ã§æ›´æ–°åˆ¶é™
 
-    // ÅV‚Ìi’»’l‚ğ•Û
+    // æœ€æ–°ã®é€²æ—å€¤ã‚’ä¿æŒ
     private volatile int _latestProgressValue = 0;
     private volatile bool _hasPendingUpdate = false;
     private Timer? _progressFlushTimer;
 
     /// <summary>
-    /// ProcessingDialogƒNƒ‰ƒX‚ÌV‚µ‚¢ƒCƒ“ƒXƒ^ƒ“ƒX‚ğ‰Šú‰»
+    /// ProcessingDialogã‚¯ãƒ©ã‚¹ã®æ–°ã—ã„ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’åˆæœŸåŒ–
     /// </summary>
     public ProcessingDialog()
     {
         InitializeComponent();
 
+        // XAMLã§å®šç¾©ã•ã‚ŒãŸContentã‚’å–å¾—ã—ã¦å›ºå®šåŒ–
         Content = base.Content;
+        
+        // DataContextã‚’è‡ªåˆ†è‡ªèº«ã«è¨­å®šã—ã¦Bindingã‚’æœ‰åŠ¹åŒ–
+        DataContext = this;
+
         SecondaryButtonClick += OnCancelButtonClick;
     }
 
     /// <summary>
-    /// ƒLƒƒƒ“ƒZƒ‹ƒ{ƒ^ƒ“ƒNƒŠƒbƒN‚Ìˆ—
+    /// ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®çŠ¶æ…‹ã‚’åˆæœŸçŠ¶æ…‹ã«ãƒªã‚»ãƒƒãƒˆ
+    /// </summary>
+    public async Task ResetState()
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            try
+            {
+                // UIè¦ç´ ã‚’åˆæœŸçŠ¶æ…‹ã«ãƒªã‚»ãƒƒãƒˆ
+                ProgressingTextBlock.Text = " - ";
+                ContentProgressBar.IsIndeterminate = !MaxValue.HasValue;
+                ContentProgressBar.Value = 0;
+                StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                StatusTextBlock.Text = "";
+                
+                // ãƒœã‚¿ãƒ³çŠ¶æ…‹ã‚’ãƒªã‚»ãƒƒãƒˆ
+                PrimaryButtonText = "";
+                SecondaryButtonText = "";
+                IsPrimaryButtonEnabled = false;
+                
+                tcs.SetResult(true);
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        });
+        
+        // UIæ›´æ–°ã®å®Œäº†ã‚’å¾…æ©Ÿ
+        await tcs.Task;
+    }
+
+    /// <summary>
+    /// ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒœã‚¿ãƒ³ã‚¯ãƒªãƒƒã‚¯æ™‚ã®å‡¦ç†
     /// </summary>
     private void OnCancelButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
@@ -64,67 +125,63 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// “¯Šúˆ—‚ği’»•\¦•t‚«‚ÅÀs
+    /// åŒæœŸå‡¦ç†ã‚’é€²æ—è¡¨ç¤ºä»˜ãã§å®Ÿè¡Œ
     /// </summary>
-    /// <param name="action">Às‚·‚éˆ—</param>
+    /// <param name="action">å®Ÿè¡Œã™ã‚‹å‡¦ç†</param>
     public async Task RunAsync(Action<IProgress<int>> action)
     {
-        await ExecuteRunAsync(tcs =>
+        await ExecuteRunAsync(async tcs =>
         {
-            _ = StartProcessing(() => { action(CreateProgress()); return true; }, tcs, _cancellationTokenSource!.Token);
-            return Task.CompletedTask;
+            await StartProcessing(() => { action(CreateProgress()); return true; }, tcs, _cancellationTokenSource!.Token);
         }, false);
     }
 
     /// <summary>
-    /// “¯Šúˆ—‚ği’»•\¦•t‚«‚ÅÀs‚µAŒ‹‰Ê‚ğ•Ô‹p
+    /// åŒæœŸå‡¦ç†ã‚’é€²æ—è¡¨ç¤ºä»˜ãã§å®Ÿè¡Œã—ã€çµæœã‚’è¿”å´
     /// </summary>
-    /// <typeparam name="T">–ß‚è’l‚ÌŒ^</typeparam>
-    /// <param name="func">Às‚·‚éˆ—</param>
-    /// <returns>ˆ—‚ÌÀsŒ‹‰Ê</returns>
+    /// <typeparam name="T">æˆ»ã‚Šå€¤ã®å‹</typeparam>
+    /// <param name="func">å®Ÿè¡Œã™ã‚‹å‡¦ç†</param>
+    /// <returns>å‡¦ç†ã®å®Ÿè¡Œçµæœ</returns>
     public async Task<T> RunAsync<T>(Func<IProgress<int>, T> func)
     {
-        return await ExecuteRunAsync<T>(tcs =>
+        return await ExecuteRunAsync<T>(async tcs =>
         {
-            _ = StartProcessing(() => func(CreateProgress()), tcs, _cancellationTokenSource!.Token);
-            return Task.CompletedTask;
+            await StartProcessing(() => func(CreateProgress()), tcs, _cancellationTokenSource!.Token);
         }, false);
     }
 
     /// <summary>
-    /// ”ñ“¯Šúˆ—‚ğƒLƒƒƒ“ƒZƒ‹‚Æƒ^ƒCƒ€ƒAƒEƒg§Œä•t‚«‚ÅÀs
+    /// éåŒæœŸå‡¦ç†ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã¨ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆ¶å¾¡ä»˜ãã§å®Ÿè¡Œ
     /// </summary>
-    /// <param name="asyncAction">Às‚·‚é”ñ“¯Šúˆ—</param>
-    /// <param name="timeout">ƒ^ƒCƒ€ƒAƒEƒgŠÔinull‚Ìê‡‚Í–³§ŒÀj</param>
+    /// <param name="asyncAction">å®Ÿè¡Œã™ã‚‹éåŒæœŸå‡¦ç†</param>
+    /// <param name="timeout">ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚é–“ï¼ˆnullã®å ´åˆã¯ç„¡åˆ¶é™ï¼‰</param>
     public async Task RunAsync(Func<IProgress<int>, CancellationToken, Task> asyncAction, TimeSpan? timeout = null)
     {
-        await ExecuteRunAsync(tcs =>
+        await ExecuteRunAsync(async tcs =>
         {
-            _ = StartProcessing(async () => { await asyncAction(CreateProgress(), _cancellationTokenSource!.Token); return true; }, tcs, _cancellationTokenSource!.Token);
-            return Task.CompletedTask;
+            await StartProcessing(async () => { await asyncAction(CreateProgress(), _cancellationTokenSource!.Token); return true; }, tcs, _cancellationTokenSource!.Token);
         }, true, timeout);
     }
 
     /// <summary>
-    /// ”ñ“¯Šúˆ—‚ğƒLƒƒƒ“ƒZƒ‹‚Æƒ^ƒCƒ€ƒAƒEƒg§Œä•t‚«‚ÅÀs‚µAŒ‹‰Ê‚ğ•Ô‹p
+    /// éåŒæœŸå‡¦ç†ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã¨ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆ¶å¾¡ä»˜ãã§å®Ÿè¡Œã—ã€çµæœã‚’è¿”å´
     /// </summary>
-    /// <typeparam name="T">–ß‚è’l‚ÌŒ^</typeparam>
-    /// <param name="asyncFunc">Às‚·‚é”ñ“¯Šúˆ—</param>
-    /// <param name="timeout">ƒ^ƒCƒ€ƒAƒEƒgŠÔinull‚Ìê‡‚Í–³§ŒÀj</param>
-    /// <returns>ˆ—‚ÌÀsŒ‹‰Ê</returns>
+    /// <typeparam name="T">æˆ»ã‚Šå€¤ã®å‹</typeparam>
+    /// <param name="asyncFunc">å®Ÿè¡Œã™ã‚‹éåŒæœŸå‡¦ç†</param>
+    /// <param name="timeout">ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚é–“ï¼ˆnullã®å ´åˆã¯ç„¡åˆ¶é™ï¼‰</param>
+    /// <returns>å‡¦ç†ã®å®Ÿè¡Œçµæœ</returns>
     public async Task<T> RunAsync<T>(Func<IProgress<int>, CancellationToken, Task<T>> asyncFunc, TimeSpan? timeout = null)
     {
-        return await ExecuteRunAsync<T>(tcs =>
+        return await ExecuteRunAsync<T>(async tcs =>
         {
-            _ = StartProcessing(() => asyncFunc(CreateProgress(), _cancellationTokenSource!.Token), tcs, _cancellationTokenSource!.Token);
-            return Task.CompletedTask;
+            await StartProcessing(() => asyncFunc(CreateProgress(), _cancellationTokenSource!.Token), tcs, _cancellationTokenSource!.Token);
         }, true, timeout);
     }
 
     /// <summary>
-    /// ÀsŠJn‚ğsid•¡Às‚ğ–h~j
+    /// å®Ÿè¡Œé–‹å§‹ã‚’è©¦è¡Œï¼ˆé‡è¤‡å®Ÿè¡Œã‚’é˜²æ­¢ï¼‰
     /// </summary>
-    /// <returns>ÀsŠJn‚Å‚«‚éê‡‚ÍtrueAŠù‚ÉÀs’†‚Ìê‡‚Ífalse</returns>
+    /// <returns>å®Ÿè¡Œé–‹å§‹ã§ãã‚‹å ´åˆã¯trueã€æ—¢ã«å®Ÿè¡Œä¸­ã®å ´åˆã¯false</returns>
     private bool TryStartExecution()
     {
         lock (_lock)
@@ -136,7 +193,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// Às‚ğŠ®—¹‚µAƒŠƒ\[ƒX‚ğƒNƒŠ[ƒ“ƒAƒbƒv
+    /// å®Ÿè¡Œã‚’å®Œäº†ã—ã€ãƒªã‚½ãƒ¼ã‚¹ã‚’ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—
     /// </summary>
     private void CompleteExecution()
     {
@@ -144,12 +201,12 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
         {
             _isRunning = false;
 
-            // CancellationTokenSource‚Ìó‘Ô‚ğƒ`ƒFƒbƒN‚µ‚Ä‚©‚çˆÀ‘S‚ÉƒLƒƒƒ“ƒZƒ‹
+            // CancellationTokenSourceã®çŠ¶æ…‹ã‚’ãƒã‚§ãƒƒã‚¯ã—ã¦ã‹ã‚‰å®‰å…¨ã«ã‚­ãƒ£ãƒ³ã‚»ãƒ«
             if (_cancellationTokenSource != null)
             {
                 if (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    // ‚Ü‚¾ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ä‚¢‚È‚¢ê‡‚Ì‚İ
+                    // ã¾ã ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¦ã„ãªã„å ´åˆã®ã¿
                     _cancellationTokenSource.Cancel();
                 }
                 _cancellationTokenSource.Dispose();
@@ -159,24 +216,27 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// ˆ—Às‚Æƒ_ƒCƒAƒƒO•\¦‚ğ“‡§Œä
+    /// å‡¦ç†å®Ÿè¡Œã¨ãƒ€ã‚¤ã‚¢ãƒ­ã‚°è¡¨ç¤ºã‚’çµ±åˆåˆ¶å¾¡ã—ã€ä¾‹å¤–ãƒãƒ³ãƒ‰ãƒªãƒ³ã‚°ã¨UIçŠ¶æ…‹ç®¡ç†ã‚’ä¸€å…ƒåŒ–
     /// </summary>
-    /// <typeparam name="T">–ß‚è’l‚ÌŒ^</typeparam>
-    /// <param name="processStarter">ˆ—ŠJnƒfƒŠƒQ[ƒg</param>
-    /// <param name="showCancelButton">ƒLƒƒƒ“ƒZƒ‹ƒ{ƒ^ƒ“‚ğ•\¦‚·‚é‚©</param>
-    /// <param name="timeout">ƒ^ƒCƒ€ƒAƒEƒgŠÔ</param>
-    /// <returns>ˆ—‚ÌÀsŒ‹‰Ê</returns>
+    /// <typeparam name="T">æˆ»ã‚Šå€¤ã®å‹</typeparam>
+    /// <param name="processStarter">å‡¦ç†é–‹å§‹ãƒ‡ãƒªã‚²ãƒ¼ãƒˆ</param>
+    /// <param name="showCancelButton">ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒœã‚¿ãƒ³ã‚’è¡¨ç¤ºã™ã‚‹ã‹</param>
+    /// <param name="timeout">ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚é–“</param>
+    /// <returns>å‡¦ç†ã®å®Ÿè¡Œçµæœ</returns>
     private async Task<T> ExecuteRunAsync<T>(Func<TaskCompletionSource<T>, Task> processStarter, bool showCancelButton, TimeSpan? timeout = null)
     {
         if (!TryStartExecution())
         {
             if (typeof(T) == typeof(bool))
-                return default!; // void‘Š“–‚Ìê‡‚Íreturn
+                return default!; // voidç›¸å½“ã®å ´åˆã¯return
             else
-                throw new InvalidOperationException("ˆ—‚ªŠù‚ÉÀs’†‚Å‚·B");
+                throw new InvalidOperationException("å‡¦ç†ãŒæ—¢ã«å®Ÿè¡Œä¸­ã§ã™ã€‚");
         }
 
-        // ƒ_ƒCƒAƒƒO•\¦iˆ—Š®—¹‚Ü‚Å‘Ò‹@j
+        // ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®çŠ¶æ…‹ã‚’åˆæœŸçŠ¶æ…‹ã«ãƒªã‚»ãƒƒãƒˆ
+        await ResetState();
+
+        // ãƒ€ã‚¤ã‚¢ãƒ­ã‚°è¡¨ç¤ºï¼ˆå‡¦ç†å®Œäº†ã¾ã§å¾…æ©Ÿï¼‰
         var dialogTask = ShowAsync();
 
         try
@@ -184,48 +244,73 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
             _cancellationTokenSource = new CancellationTokenSource();
             var tcs = new TaskCompletionSource<T>();
 
-            // UIİ’è
+            // UIè¨­å®š
             SecondaryButtonText = showCancelButton ? CancelButtonText : "";
             ContentProgressBar.IsIndeterminate = !MaxValue.HasValue;
 
-            // ˆ—ŠJn
-            await processStarter(tcs);
+            // å‡¦ç†é–‹å§‹ï¼ˆãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§å®Ÿè¡Œã€awaitã—ãªã„ï¼‰
+            _ = processStarter(tcs);
 
-            // ˆ—Š®—¹ƒ^ƒXƒN‚Æƒ^ƒCƒ€ƒAƒEƒg‚ğ•ÀsÀs
-            var processTask = ExecuteWithTimeout(tcs.Task, timeout);
+            // å‡¦ç†å®Œäº†ã‚¿ã‚¹ã‚¯ã¨ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã‚’ä¸¦è¡Œå®Ÿè¡Œ
+            var (result, timeoutOccurred) = await ExecuteWithTimeout(tcs.Task, timeout);
 
-            // ˆ—‚Æƒ_ƒCƒAƒƒO‚ÌŠ®—¹‚ğ‘Ò‹@
-            T result = await processTask;
+            // æ­£å¸¸å®Œäº†ã®å ´åˆã®UIçŠ¶æ…‹è¨­å®š
+            SetCompletedState();
 
-            // ÅI“I‚Èi’»’l‚ğŠmÀ‚É•\¦
+            // æœ€çµ‚çš„ãªé€²æ—å€¤ã‚’ç¢ºå®Ÿã«è¡¨ç¤º
             FlushFinalProgress();
 
-            // ƒ_ƒCƒAƒƒO‚ª‚Ü‚¾ŠJ‚¢‚Ä‚¢‚éê‡‚Íƒ†[ƒU[‚Ì‰“š‚ğ‘Ò‚Â
+            // ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ãŒã¾ã é–‹ã„ã¦ã„ã‚‹å ´åˆã¯ãƒ¦ãƒ¼ã‚¶ãƒ¼ã®å¿œç­”ã‚’å¾…ã¤
             await dialogTask;
 
             return result;
+        }
+        catch (TimeoutException)
+        {
+            // ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆç™ºç”Ÿæ™‚
+            SetTimeoutState();
+            await dialogTask;
+            
+            // æˆ»ã‚Šå€¤ã‚’æŒã¤ãƒ¡ã‚½ãƒƒãƒ‰ã®å ´åˆã¯TimeoutExceptionã‚’å†ã‚¹ãƒ­ãƒ¼
+            if (typeof(T) != typeof(bool))
+            {
+                throw;
+            }
+            return default!;
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource?.Token.IsCancellationRequested == true)
+        {
+            // ãƒ¦ãƒ¼ã‚¶ãƒ¼ã‚­ãƒ£ãƒ³ã‚»ãƒ«æ™‚
+            SetCanceledState();
+            await dialogTask;
+            return default!;
+        }
+        catch (Exception ex)
+        {
+            // ä¾‹å¤–
+            SetErrorState(ex);
+            await dialogTask;
+            return default!;
         }
         finally
         {
             CompleteExecution();
         }
-
-
     }
 
     /// <summary>
-    /// ˆ—Às‚Æƒ_ƒCƒAƒƒO•\¦‚ğ“‡§Œäi–ß‚è’l‚È‚µ”Åj
+    /// å‡¦ç†å®Ÿè¡Œã¨ãƒ€ã‚¤ã‚¢ãƒ­ã‚°è¡¨ç¤ºã‚’çµ±åˆåˆ¶å¾¡ï¼ˆæˆ»ã‚Šå€¤ãªã—ç‰ˆï¼‰
     /// </summary>
-    /// <param name="processStarter">ˆ—ŠJnƒfƒŠƒQ[ƒg</param>
-    /// <param name="showCancelButton">ƒLƒƒƒ“ƒZƒ‹ƒ{ƒ^ƒ“‚ğ•\¦‚·‚é‚©</param>
-    /// <param name="timeout">ƒ^ƒCƒ€ƒAƒEƒgŠÔ</param>
+    /// <param name="processStarter">å‡¦ç†é–‹å§‹ãƒ‡ãƒªã‚²ãƒ¼ãƒˆ</param>
+    /// <param name="showCancelButton">ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒœã‚¿ãƒ³ã‚’è¡¨ç¤ºã™ã‚‹ã‹</param>
+    /// <param name="timeout">ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚é–“</param>
     private async Task ExecuteRunAsync(Func<TaskCompletionSource<bool>, Task> processStarter, bool showCancelButton, TimeSpan? timeout = null)
     {
         await ExecuteRunAsync<bool>(processStarter, showCancelButton, timeout);
     }
 
     /// <summary>
-    /// •Û—¯’†‚Ìi’»XV‚ğ‘¦À‚Éƒtƒ‰ƒbƒVƒ…‚µ‚ÄÅI’l‚ğŠmÀ‚É•\¦
+    /// ä¿ç•™ä¸­ã®é€²æ—æ›´æ–°ã‚’å³åº§ã«ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã—ã¦æœ€çµ‚å€¤ã‚’ç¢ºå®Ÿã«è¡¨ç¤º
     /// </summary>
     private void FlushFinalProgress()
     {
@@ -233,24 +318,24 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
         {
             if (_hasPendingUpdate)
             {
-                // •Û—¯’†‚ÌXV‚ğ‘¦À‚ÉÀs
+                // ä¿ç•™ä¸­ã®æ›´æ–°ã‚’å³åº§ã«å®Ÿè¡Œ
                 var finalValue = _latestProgressValue;
                 _hasPendingUpdate = false;
 
-                // ƒ^ƒCƒ}[‚ğƒNƒŠƒA
+                // ã‚¿ã‚¤ãƒãƒ¼ã‚’ã‚¯ãƒªã‚¢
                 _progressFlushTimer?.Dispose();
                 _progressFlushTimer = null;
 
-                // UIXV‚ğÀs
+                // UIæ›´æ–°ã‚’å®Ÿè¡Œ
                 DispatcherQueue.TryEnqueue(() => UpdateProgress(finalValue));
             }
         }
     }
 
     /// <summary>
-    /// MaxValue‚Ìİ’è‚É‰‚¶‚Ä“KØ‚ÈProgressƒCƒ“ƒXƒ^ƒ“ƒX‚ğì¬
+    /// MaxValueã®è¨­å®šã«å¿œã˜ã¦é©åˆ‡ãªProgressã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ä½œæˆ
     /// </summary>
-    /// <returns>ƒp[ƒZƒ“ƒe[ƒW‚Ü‚½‚ÍƒJƒEƒ“ƒg•\¦—p‚ÌProgressƒCƒ“ƒXƒ^ƒ“ƒX</returns>
+    /// <returns>ãƒ‘ãƒ¼ã‚»ãƒ³ãƒ†ãƒ¼ã‚¸ã¾ãŸã¯ã‚«ã‚¦ãƒ³ãƒˆè¡¨ç¤ºç”¨ã®Progressã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹</returns>
     private Progress<int> CreateProgress()
     {
         return MaxValue.HasValue ?
@@ -259,9 +344,9 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// MaxValue‚Ìİ’è‚É‰‚¶‚Ä“KØ‚È•û–@‚Åi’»•\¦‚ğXV
+    /// MaxValueã®è¨­å®šã«å¿œã˜ã¦é©åˆ‡ãªæ–¹æ³•ã§é€²æ—è¡¨ç¤ºã‚’æ›´æ–°
     /// </summary>
-    /// <param name="value">i’»’l</param>
+    /// <param name="value">é€²æ—å€¤</param>
     private void UpdateProgress(int value)
     {
         if (MaxValue.HasValue)
@@ -275,9 +360,9 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// ƒp[ƒZƒ“ƒe[ƒWi’»‚ğƒXƒƒbƒgƒŠƒ“ƒO‹@”\•t‚«‚ÅXV
+    /// ãƒ‘ãƒ¼ã‚»ãƒ³ãƒ†ãƒ¼ã‚¸é€²æ—ã‚’ã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°æ©Ÿèƒ½ä»˜ãã§æ›´æ–°
     /// </summary>
-    /// <param name="value">i’»’l</param>
+    /// <param name="value">é€²æ—å€¤</param>
     private void ThrottledProgressingPercentageRender(int value)
     {
         lock (_lock)
@@ -285,7 +370,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
             _latestProgressValue = value;
             var now = DateTime.UtcNow;
 
-            // ƒXƒƒbƒgƒŠƒ“ƒO“K—p
+            // ã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°é©ç”¨
             if ((now - _lastProgressUpdate).TotalMilliseconds < ProgressUpdateIntervalMs)
             {
                 _hasPendingUpdate = true;
@@ -301,9 +386,9 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// ƒJƒEƒ“ƒgi’»‚ğƒXƒƒbƒgƒŠƒ“ƒO‹@”\•t‚«‚ÅXV
+    /// ã‚«ã‚¦ãƒ³ãƒˆé€²æ—ã‚’ã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°æ©Ÿèƒ½ä»˜ãã§æ›´æ–°
     /// </summary>
-    /// <param name="value">i’»’l</param>
+    /// <param name="value">é€²æ—å€¤</param>
     private void ThrottledProgressingCountRender(int value)
     {
         lock (_lock)
@@ -311,7 +396,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
             _latestProgressValue = value;
             var now = DateTime.UtcNow;
 
-            // ƒXƒƒbƒgƒŠƒ“ƒO“K—p
+            // ã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°é©ç”¨
             if ((now - _lastProgressUpdate).TotalMilliseconds < ProgressUpdateIntervalMs)
             {
                 _hasPendingUpdate = true;
@@ -327,22 +412,22 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// ƒXƒƒbƒgƒŠƒ“ƒO‚³‚ê‚½i’»XV‚ğƒtƒ‰ƒbƒVƒ…‚·‚éƒ^ƒCƒ}[‚ğŠm•Û
+    /// ã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°ã•ã‚ŒãŸé€²æ—æ›´æ–°ã‚’ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã™ã‚‹ã‚¿ã‚¤ãƒãƒ¼ã‚’ç¢ºä¿
     /// </summary>
     private void EnsureFlushTimer()
     {
         if (_progressFlushTimer == null)
         {
-            // ’x‰„ƒtƒ‰ƒbƒVƒ…ƒ^ƒCƒ}[‚ğİ’èiƒXƒƒbƒgƒŠƒ“ƒOŠÔŠu‚Ì1.5”{Œã‚ÉÀsj
+            // é…å»¶ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã‚¿ã‚¤ãƒãƒ¼ã‚’è¨­å®šï¼ˆã‚¹ãƒ­ãƒƒãƒˆãƒªãƒ³ã‚°é–“éš”ã®1.5å€å¾Œã«å®Ÿè¡Œï¼‰
             _progressFlushTimer = new Timer(FlushPendingProgress, null,
                 (int)(ProgressUpdateIntervalMs * 1.5), System.Threading.Timeout.Infinite);
         }
     }
 
     /// <summary>
-    /// •Û—¯’†‚Ìi’»XV‚ğUI‚Éƒtƒ‰ƒbƒVƒ…‚·‚éƒ^ƒCƒ}[ƒR[ƒ‹ƒoƒbƒN
+    /// ä¿ç•™ä¸­ã®é€²æ—æ›´æ–°ã‚’UIã«ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã™ã‚‹ã‚¿ã‚¤ãƒãƒ¼ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯
     /// </summary>
-    /// <param name="state">ƒ^ƒCƒ}[ƒR[ƒ‹ƒoƒbƒNó‘Ôi–¢g—pj</param>
+    /// <param name="state">ã‚¿ã‚¤ãƒãƒ¼ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯çŠ¶æ…‹ï¼ˆæœªä½¿ç”¨ï¼‰</param>
     private void FlushPendingProgress(object? state)
     {
         int valueToFlush;
@@ -355,86 +440,63 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
             _hasPendingUpdate = false;
             _lastProgressUpdate = DateTime.UtcNow;
 
-            // ƒ^ƒCƒ}[‚ğÄİ’è
+            // ã‚¿ã‚¤ãƒãƒ¼ã‚’å†è¨­å®š
             _progressFlushTimer?.Dispose();
             _progressFlushTimer = null;
         }
 
         if (shouldFlush)
         {
-            // UIXViÅV’l‚Åj
+            // UIæ›´æ–°ï¼ˆæœ€æ–°å€¤ã§ï¼‰
             UpdateProgress(valueToFlush);
         }
     }
 
     /// <summary>
-    /// ƒ^ƒXƒN‚ğƒ^ƒCƒ€ƒAƒEƒg§Œä•t‚«‚ÅÀs‚µAˆÙ‚È‚éƒLƒƒƒ“ƒZƒ‹ƒVƒiƒŠƒI‚ğˆ—
+    /// ã‚¿ã‚¹ã‚¯ã‚’ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆ¶å¾¡ä»˜ãã§å®Ÿè¡Œã—ã€çµæœã¨ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆçŠ¶æ…‹ã‚’è¿”ã™
     /// </summary>
-    /// <typeparam name="T">ƒ^ƒXƒN‚Ì–ß‚è’lŒ^</typeparam>
-    /// <param name="task">Às‚·‚éƒ^ƒXƒN</param>
-    /// <param name="timeout">ƒ^ƒCƒ€ƒAƒEƒgŠÔinull‚Ìê‡‚Í–³§ŒÀj</param>
-    /// <returns>ƒ^ƒXƒN‚ÌÀsŒ‹‰Ê</returns>
-    private async Task<T> ExecuteWithTimeout<T>(Task<T> task, TimeSpan? timeout)
+    /// <typeparam name="T">ã‚¿ã‚¹ã‚¯ã®æˆ»ã‚Šå€¤å‹</typeparam>
+    /// <param name="task">å®Ÿè¡Œã™ã‚‹ã‚¿ã‚¹ã‚¯</param>
+    /// <param name="timeout">ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚é–“ï¼ˆnullã®å ´åˆã¯ç„¡åˆ¶é™ï¼‰</param>
+    /// <returns>ã‚¿ã‚¹ã‚¯ã®å®Ÿè¡Œçµæœã¨ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆçŠ¶æ…‹ã®ã‚¿ãƒ—ãƒ«</returns>
+    private async Task<(T Result, bool TimeoutOccurred)> ExecuteWithTimeout<T>(Task<T> task, TimeSpan? timeout)
     {
-        if (timeout.HasValue)
+        if (!timeout.HasValue)
         {
-            using var timeoutCts = new CancellationTokenSource(timeout.Value);
-            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                _cancellationTokenSource?.Token ?? default, timeoutCts.Token);
-
-            try
-            {
-                return await task.WaitAsync(combinedCts.Token);
-            }
-            catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
-            {
-                // CancellationTokenSource‚Ìó‘Ô‚ğƒ`ƒFƒbƒN‚µ‚Ä‚©‚çˆÀ‘S‚ÉƒLƒƒƒ“ƒZƒ‹
-                if (_cancellationTokenSource != null)
-                {
-                    if (!_cancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        // ƒoƒbƒNƒOƒ‰ƒEƒ“ƒhˆ—‚ğƒLƒƒƒ“ƒZƒ‹
-                        _cancellationTokenSource.Cancel();
-                    }
-                }
-                // ƒ^ƒCƒ€ƒAƒEƒg•\¦
-                SetTimeoutState();
-                return default!;
-            }
-            catch (OperationCanceledException) when (_cancellationTokenSource?.Token.IsCancellationRequested == true)
-            {
-                // ƒ†[ƒU[ƒLƒƒƒ“ƒZƒ‹•\¦iƒoƒbƒNƒOƒ‰ƒEƒ“ƒhˆ—‚ÍŠù‚ÉƒLƒƒƒ“ƒZƒ‹Ï‚İj
-                SetCanceledState();
-                return default!;
-            }
+            var result = await task;
+            return (result, false);
         }
 
-        try
+        var timeoutTask = Task.Delay(timeout.Value);
+        var completedTask = await Task.WhenAny(task, timeoutTask);
+        
+        if (completedTask == timeoutTask)
         {
-            return await task;
+            if (_cancellationTokenSource != null && !_cancellationTokenSource.Token.IsCancellationRequested)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+            throw new TimeoutException("å‡¦ç†ãŒã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã—ã¾ã—ãŸã€‚");
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource?.Token.IsCancellationRequested == true)
+        else
         {
-            // ƒ†[ƒU[ƒLƒƒƒ“ƒZƒ‹•\¦iƒoƒbƒNƒOƒ‰ƒEƒ“ƒhˆ—‚ÍŠù‚ÉƒLƒƒƒ“ƒZƒ‹Ï‚İj
-            SetCanceledState();
-            return default!;
+            var result = await task;
+            return (result, false);
         }
     }
 
     /// <summary>
-    /// “¯Šúˆ—‚ğƒoƒbƒNƒOƒ‰ƒEƒ“ƒh‚ÅÀs‚µAŠ®—¹ó‘Ô‚ğŠÇ—
+    /// åŒæœŸå‡¦ç†ã‚’ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§å®Ÿè¡Œã—ã€çµæœã‚’TaskCompletionSourceã«è¨­å®š
     /// </summary>
-    /// <typeparam name="T">–ß‚è’l‚ÌŒ^</typeparam>
-    /// <param name="syncFunc">Às‚·‚é“¯Šúˆ—</param>
-    /// <param name="tcs">Š®—¹’Ê’m—p‚ÌTaskCompletionSource</param>
-    /// <param name="cancellationToken">ƒLƒƒƒ“ƒZƒ‹ƒg[ƒNƒ“</param>
+    /// <typeparam name="T">æˆ»ã‚Šå€¤ã®å‹</typeparam>
+    /// <param name="syncFunc">å®Ÿè¡Œã™ã‚‹åŒæœŸå‡¦ç†</param>
+    /// <param name="tcs">å®Œäº†é€šçŸ¥ç”¨ã®TaskCompletionSource</param>
+    /// <param name="cancellationToken">ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒˆãƒ¼ã‚¯ãƒ³</param>
     private async Task StartProcessing<T>(Func<T> syncFunc, TaskCompletionSource<T> tcs, CancellationToken cancellationToken)
     {
         try
         {
             T result = await Task.Run(syncFunc, cancellationToken).ConfigureAwait(false);
-
-            SetCompletedState();
             tcs.TrySetResult(result);
         }
         catch (OperationCanceledException)
@@ -443,25 +505,22 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
         }
         catch (Exception ex)
         {
-            SetErrorState(ex);
             tcs.TrySetException(ex);
         }
     }
 
     /// <summary>
-    /// ”ñ“¯Šúˆ—‚ğÀs‚µAŠ®—¹ó‘Ô‚ğŠÇ—
+    /// éåŒæœŸå‡¦ç†ã‚’å®Ÿè¡Œã—ã€çµæœã‚’TaskCompletionSourceã«è¨­å®š
     /// </summary>
-    /// <typeparam name="T">–ß‚è’l‚ÌŒ^</typeparam>
-    /// <param name="asyncFunc">Às‚·‚é”ñ“¯Šúˆ—</param>
-    /// <param name="tcs">Š®—¹’Ê’m—p‚ÌTaskCompletionSource</param>
-    /// <param name="cancellationToken">ƒLƒƒƒ“ƒZƒ‹ƒg[ƒNƒ“</param>
+    /// <typeparam name="T">æˆ»ã‚Šå€¤ã®å‹</typeparam>
+    /// <param name="asyncFunc">å®Ÿè¡Œã™ã‚‹éåŒæœŸå‡¦ç†</param>
+    /// <param name="tcs">å®Œäº†é€šçŸ¥ç”¨ã®TaskCompletionSource</param>
+    /// <param name="cancellationToken">ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒˆãƒ¼ã‚¯ãƒ³</param>
     private async Task StartProcessing<T>(Func<Task<T>> asyncFunc, TaskCompletionSource<T> tcs, CancellationToken cancellationToken)
     {
         try
         {
             T result = await asyncFunc().ConfigureAwait(false);
-
-            SetCompletedState();
             tcs.TrySetResult(result);
         }
         catch (OperationCanceledException)
@@ -470,19 +529,18 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
         }
         catch (Exception ex)
         {
-            SetErrorState(ex);
             tcs.TrySetException(ex);
         }
     }
 
     /// <summary>
-    /// ˆ—³íŠ®—¹‚ÌUIó‘Ô‚ğİ’è
+    /// å‡¦ç†æ­£å¸¸å®Œäº†æ™‚ã®UIçŠ¶æ…‹ã‚’è¨­å®š
     /// </summary>
     private void SetCompletedState()
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            // ˆ—Š®—¹‚ÉÅIi’»‚ğŠmÀ‚É•\¦
+            // å‡¦ç†å®Œäº†æ™‚ã«æœ€çµ‚é€²æ—ã‚’ç¢ºå®Ÿã«è¡¨ç¤º
             if (MaxValue.HasValue)
             {
                 ProgressingPercentageRender(MaxValue.Value);
@@ -502,7 +560,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// ƒ†[ƒU[ƒLƒƒƒ“ƒZƒ‹‚ÌUIó‘Ô‚ğİ’è
+    /// ãƒ¦ãƒ¼ã‚¶ãƒ¼ã‚­ãƒ£ãƒ³ã‚»ãƒ«æ™‚ã®UIçŠ¶æ…‹ã‚’è¨­å®š
     /// </summary>
     private void SetCanceledState()
     {
@@ -510,14 +568,14 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
         {
             StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
             StatusTextBlock.Text = CanceledMessage;
-            PrimaryButtonText = "•Â‚¶‚é";
+            PrimaryButtonText = "é–‰ã˜ã‚‹";
             SecondaryButtonText = "";
             IsPrimaryButtonEnabled = true;
         });
     }
 
     /// <summary>
-    /// ƒ^ƒCƒ€ƒAƒEƒg‚ÌUIó‘Ô‚ğİ’è
+    /// ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæ™‚ã®UIçŠ¶æ…‹ã‚’è¨­å®š
     /// </summary>
     private void SetTimeoutState()
     {
@@ -525,40 +583,40 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
         {
             StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
             StatusTextBlock.Text = TimeoutMessage;
-            PrimaryButtonText = "•Â‚¶‚é";
+            PrimaryButtonText = "é–‰ã˜ã‚‹";
             SecondaryButtonText = "";
             IsPrimaryButtonEnabled = true;
         });
     }
 
     /// <summary>
-    /// ƒGƒ‰[”­¶‚ÌUIó‘Ô‚ğİ’è
+    /// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿæ™‚ã®UIçŠ¶æ…‹ã‚’è¨­å®š
     /// </summary>
-    /// <param name="ex">”­¶‚µ‚½—áŠO</param>
+    /// <param name="ex">ç™ºç”Ÿã—ãŸä¾‹å¤–</param>
     private void SetErrorState(Exception ex)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
             StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-            StatusTextBlock.Text = $"ƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½:\n{ex.Message}";
-            PrimaryButtonText = "•Â‚¶‚é";
+            StatusTextBlock.Text = $"ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ:\n{ex.Message}";
+            PrimaryButtonText = "é–‰ã˜ã‚‹";
             SecondaryButtonText = "";
             IsPrimaryButtonEnabled = true;
         });
     }
 
     /// <summary>
-    /// i’»‚ğƒp[ƒZƒ“ƒe[ƒWŒ`®‚Å•\¦
+    /// é€²æ—ã‚’ãƒ‘ãƒ¼ã‚»ãƒ³ãƒ†ãƒ¼ã‚¸å½¢å¼ã§è¡¨ç¤º
     /// </summary>
-    /// <param name="value">Œ»İ‚Ìi’»’l</param>
-    /// <exception cref="ArgumentException">MaxValue‚ªİ’è‚³‚ê‚Ä‚¢‚È‚¢ê‡</exception>
+    /// <param name="value">ç¾åœ¨ã®é€²æ—å€¤</param>
+    /// <exception cref="ArgumentException">MaxValueãŒè¨­å®šã•ã‚Œã¦ã„ãªã„å ´åˆ</exception>
     private void ProgressingPercentageRender(int value)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
             if (!MaxValue.HasValue)
             {
-                throw new ArgumentException("MaxValue‚ªİ’è‚³‚ê‚Ä‚¢‚È‚¢‚½‚ßAƒp[ƒZƒ“ƒe[ƒW•\¦‚Å‚«‚Ü‚¹‚ñB");
+                throw new ArgumentException("MaxValueãŒè¨­å®šã•ã‚Œã¦ã„ãªã„ãŸã‚ã€ãƒ‘ãƒ¼ã‚»ãƒ³ãƒ†ãƒ¼ã‚¸è¡¨ç¤ºã§ãã¾ã›ã‚“ã€‚");
             }
 
             double ratio = (double)value / MaxValue.Value;
@@ -575,26 +633,26 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable
     }
 
     /// <summary>
-    /// i’»‚ğƒJƒEƒ“ƒgŒ`®‚Å•\¦
+    /// é€²æ—ã‚’ã‚«ã‚¦ãƒ³ãƒˆå½¢å¼ã§è¡¨ç¤º
     /// </summary>
-    /// <param name="value">Œ»İ‚ÌƒJƒEƒ“ƒg’l</param>
+    /// <param name="value">ç¾åœ¨ã®ã‚«ã‚¦ãƒ³ãƒˆå€¤</param>
     private void ProgressingCountRender(int value)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
             var sb = new StringBuilder();
-            sb.AppendFormat("{0} Œ", value);
+            sb.AppendFormat("{0} ä»¶", value);
 
             ProgressingTextBlock.Text = sb.ToString();
         });
     }
 
     /// <summary>
-    /// ProcessingDialog‚ªg—p‚·‚é‚·‚×‚Ä‚ÌƒŠƒ\[ƒX‚ğ‰ğ•ú
+    /// ProcessingDialogãŒä½¿ç”¨ã™ã‚‹ã™ã¹ã¦ã®ãƒªã‚½ãƒ¼ã‚¹ã‚’è§£æ”¾
     /// </summary>
     public void Dispose()
     {
-        // ƒ^ƒCƒ}[ƒŠƒ\[ƒX‚ğ‰ğ•ú
+        // ã‚¿ã‚¤ãƒãƒ¼ãƒªã‚½ãƒ¼ã‚¹ã‚’è§£æ”¾
         _progressFlushTimer?.Dispose();
         _progressFlushTimer = null;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,12 +50,8 @@ public static class ProcessingDialogTestFunctions
         for (int i = 0; i <= maxSteps; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             progress.Report(i);
-
-            // 長時間処理をシミュレート（500ms間隔）
             await Task.Delay(500, cancellationToken);
-
             processedCount++;
         }
 
@@ -71,11 +68,8 @@ public static class ProcessingDialogTestFunctions
         for (int i = 0; i <= maxSteps; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            // 高頻度で進捗更新
             progress.Report(i);
 
-            // 短い間隔で処理
             if (i % 100 == 0)
             {
                 await Task.Delay(1, cancellationToken);
@@ -222,6 +216,146 @@ public static class ProcessingDialogTestFunctions
 
         return true;
     }
+
+    // === 同期処理テスト関数群 ===
+
+    /// <summary>
+    /// 基本的な同期処理テスト（戻り値あり）
+    /// </summary>
+    public static string BasicSyncProcessingWithResult(IProgress<int> progress)
+    {
+        const int maxSteps = 100;
+        var result = "同期処理完了";
+
+        for (int i = 0; i <= maxSteps; i++)
+        {
+            // 進捗報告
+            progress.Report(i);
+
+            // 同期処理をシミュレート
+            Thread.Sleep(50);
+
+            // 処理内容をシミュレート
+            if (i == maxSteps / 2)
+            {
+                result += " - 中間処理完了";
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 同期処理でのエラー発生テスト
+    /// </summary>
+    public static string SyncErrorProcessingTest(IProgress<int> progress)
+    {
+        const int maxSteps = 50;
+
+        for (int i = 0; i <= maxSteps; i++)
+        {
+            progress.Report(i);
+
+            // 30%の時点でエラーを発生
+            if (i == 30)
+            {
+                throw new InvalidOperationException("同期処理テスト用エラー: 計算中に問題が発生しました");
+            }
+
+            // 同期処理をシミュレート
+            Thread.Sleep(100);
+        }
+
+        return "エラーなく完了";
+    }
+
+    /// <summary>
+    /// 計算集約的な同期処理テスト
+    /// </summary>
+    public static long HeavyComputationTest(IProgress<int> progress)
+    {
+        const int maxIterations = 1000000;
+        const int reportInterval = maxIterations / 100;
+        long result = 0;
+
+        for (int i = 0; i < maxIterations; i++)
+        {
+            // 計算集約的な処理をシミュレート
+            result += (long)Math.Sqrt(i * 1.5) + (long)Math.Sin(i * 0.001);
+
+            // 進捗報告（100回に分けて）
+            if (i % reportInterval == 0)
+            {
+                progress.Report(i / reportInterval);
+
+                // UI更新のための短い待機
+                Thread.Sleep(1);
+            }
+        }
+
+        progress.Report(100);
+        return result;
+    }
+
+    /// <summary>
+    /// ファイル操作シミュレーション（同期処理）
+    /// </summary>
+    public static int SyncFileOperationSimulation(IProgress<int> progress)
+    {
+        const int totalFiles = 25;
+        int processedFiles = 0;
+
+        for (int i = 0; i < totalFiles; i++)
+        {
+            // ファイル読み込み処理のシミュレート
+            Thread.Sleep(200);
+
+            // 15番目のファイルでエラーを発生させる
+            if (i == 14)
+            {
+                throw new System.IO.FileNotFoundException($"テスト用エラー: ファイル{i + 1}が見つかりません");
+            }
+
+            processedFiles++;
+            progress.Report(processedFiles);
+
+            // 一部のファイルで追加処理時間
+            if (i % 5 == 0)
+            {
+                Thread.Sleep(300);
+            }
+        }
+
+        return processedFiles;
+    }
+
+    /// <summary>
+    /// データ変換処理テスト（同期・エラーなし）
+    /// </summary>
+    public static int DataTransformationTest(IProgress<int> progress)
+    {
+        const int totalItems = 500;
+        int transformedItems = 0;
+
+        for (int i = 0; i < totalItems; i++)
+        {
+            // データ変換処理をシミュレート
+            var data = $"Item_{i}";
+            var transformed = data.ToUpper().Replace("_", "-");
+
+            transformedItems++;
+
+            // 10項目ごとに進捗報告
+            if (i % 10 == 0)
+            {
+                progress.Report((i * 100) / totalItems);
+                Thread.Sleep(20); // 処理時間をシミュレート
+            }
+        }
+
+        progress.Report(100);
+        return transformedItems;
+    }
 }
 
 /// <summary>
@@ -257,7 +391,6 @@ public static class ProcessingDialogTestHelper
         }
         catch (TimeoutException)
         {
-            // タイムアウト時の処理
             return -1;
         }
     }
@@ -304,5 +437,305 @@ public static class ProcessingDialogTestHelper
             ProcessingDialogTestFunctions.FileProcessingSimulation,
             TimeSpan.FromSeconds(15) // 15秒でタイムアウト
         );
+    }
+
+    // === 同期処理テスト実行ヘルパー ===
+
+    /// <summary>
+    /// 基本的な同期処理テストの実行例
+    /// </summary>
+    public static async Task<string> RunBasicSyncTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "基本的な同期処理テスト";
+        dialog.MaxValue = 100;
+
+        return await dialog.RunAsync(ProcessingDialogTestFunctions.BasicSyncProcessingWithResult);
+    }
+
+    /// <summary>
+    /// 同期処理エラーハンドリングテストの実行例
+    /// </summary>
+    public static async Task<string?> RunSyncErrorTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "同期処理エラー発生テスト";
+        dialog.MaxValue = 50;
+
+        try
+        {
+            return await dialog.RunAsync(ProcessingDialogTestFunctions.SyncErrorProcessingTest);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // エラー処理（この例外は ProcessingDialog で UI 表示されるため、ここには到達しない）
+            return $"エラーをキャッチ: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// 計算集約的な同期処理テストの実行例
+    /// </summary>
+    public static async Task<long> RunHeavyComputationTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "計算集約的処理テスト";
+        dialog.MaxValue = 100;
+
+        return await dialog.RunAsync(ProcessingDialogTestFunctions.HeavyComputationTest);
+    }
+
+    /// <summary>
+    /// 同期ファイル操作エラーテストの実行例
+    /// </summary>
+    public static async Task<int> RunSyncFileErrorTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "ファイル操作エラーテスト";
+        dialog.MaxValue = 25;
+
+        try
+        {
+            return await dialog.RunAsync(ProcessingDialogTestFunctions.SyncFileOperationSimulation);
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            // エラー処理（この例外は ProcessingDialog で UI 表示されるため、ここには到達しない）
+            return -1;
+        }
+    }
+
+    /// <summary>
+    /// データ変換処理テストの実行例
+    /// </summary>
+    public static async Task<int> RunDataTransformationTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "データ変換処理テスト";
+        dialog.MaxValue = 100;
+
+        return await dialog.RunAsync(ProcessingDialogTestFunctions.DataTransformationTest);
+    }
+
+    // === 全テスト連続実行 ===
+
+    /// <summary>
+    /// 全テストケースを連続実行するテストランナー
+    /// </summary>
+    public static async Task RunAllTests(ProcessingDialog dialog)
+    {
+        var testResults = new List<(string TestName, string Result, bool Success)>();
+
+        // 1. 基本的な非同期処理テスト
+        try
+        {
+            var result1 = await RunBasicTest(dialog);
+            testResults.Add(("基本的な非同期処理テスト", result1, true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("基本的な非同期処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        // 短い待機
+        await Task.Delay(1000);
+
+        // 2. 高頻度進捗更新テスト
+        try
+        {
+            var result2 = await RunHighFrequencyTest(dialog);
+            testResults.Add(("高頻度進捗更新テスト", result2.ToString(), true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("高頻度進捗更新テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 3. 非同期エラーハンドリングテスト
+        try
+        {
+            var result3 = await RunErrorTest(dialog);
+            // エラーハンドリングテストでは戻り値がnullでも成功（UIでエラー表示される）
+            testResults.Add(("非同期エラーハンドリングテスト", result3 ?? "エラー処理完了", true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("非同期エラーハンドリングテスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 4. ファイル処理テスト
+        try
+        {
+            var result4 = await RunFileProcessingTest(dialog);
+            testResults.Add(("ファイル処理テスト", result4.ToString(), true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("ファイル処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 5. 基本的な同期処理テスト
+        try
+        {
+            var result5 = await RunBasicSyncTest(dialog);
+            testResults.Add(("基本的な同期処理テスト", result5, true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("基本的な同期処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 6. 同期処理エラーハンドリングテスト
+        try
+        {
+            var result6 = await RunSyncErrorTest(dialog);
+            // エラーハンドリングテストでは戻り値がnullでも成功（UIでエラー表示される）
+            testResults.Add(("同期処理エラーハンドリングテスト", result6 ?? "エラー処理完了", true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("同期処理エラーハンドリングテスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 7. 計算集約的処理テスト
+        try
+        {
+            var result7 = await RunHeavyComputationTest(dialog);
+            testResults.Add(("計算集約的処理テスト", result7.ToString(), true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("計算集約的処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 8. 同期ファイル操作エラーテスト
+        try
+        {
+            var result8 = await RunSyncFileErrorTest(dialog);
+            // ファイル操作エラーテストでは15番目でエラー発生してUIに表示されるため成功
+            testResults.Add(("同期ファイル操作エラーテスト", "ファイルエラー処理完了", true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("同期ファイル操作エラーテスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 9. データ変換処理テスト
+        try
+        {
+            var result9 = await RunDataTransformationTest(dialog);
+            testResults.Add(("データ変換処理テスト", result9.ToString(), true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("データ変換処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 10. タイムアウトテスト（最後に実行）
+        try
+        {
+            var result10 = await RunTimeoutTest(dialog);
+            // タイムアウトテストでは5秒でタイムアウト発生してUIに表示されるため成功
+            testResults.Add(("タイムアウトテスト", "タイムアウト処理完了", true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("タイムアウトテスト", $"エラー: {ex.Message}", false));
+        }
+
+        // 最終結果を表示
+        await ShowTestResults(dialog, testResults);
+    }
+
+    /// <summary>
+    /// テスト結果をダイアログで表示
+    /// </summary>
+    private static async Task ShowTestResults(ProcessingDialog dialog, List<(string TestName, string Result, bool Success)> testResults)
+    {
+        dialog.ContentText = "テスト結果";
+        dialog.MaxValue = null; // カウント表示モード
+
+        await dialog.RunAsync(progress =>
+        {
+            var successCount = testResults.Count(r => r.Success);
+            var totalCount = testResults.Count;
+
+            progress.Report(successCount);
+
+            // 結果をコンソール出力（デバッグ用）
+            System.Diagnostics.Debug.WriteLine("\n=== ProcessingDialog 全テスト結果 ===");
+            System.Diagnostics.Debug.WriteLine($"成功: {successCount}/{totalCount}");
+            System.Diagnostics.Debug.WriteLine("詳細:");
+
+            foreach (var (testName, result, success) in testResults)
+            {
+                var status = success ? "✓" : "✗";
+                System.Diagnostics.Debug.WriteLine($"  {status} {testName}: {result}");
+            }
+            System.Diagnostics.Debug.WriteLine("================================\n");
+
+            Thread.Sleep(2000); // 結果表示時間
+
+            return $"テスト完了: {successCount}/{totalCount} 成功";
+        });
+    }
+
+    /// <summary>
+    /// 簡易テスト（エラー系を除外）の連続実行
+    /// </summary>
+    public static async Task RunBasicTests(ProcessingDialog dialog)
+    {
+        var testResults = new List<(string TestName, string Result, bool Success)>();
+
+        // 1. 基本的な非同期処理テスト
+        try
+        {
+            var result1 = await RunBasicTest(dialog);
+            testResults.Add(("基本的な非同期処理テスト", result1, true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("基本的な非同期処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 2. 基本的な同期処理テスト
+        try
+        {
+            var result2 = await RunBasicSyncTest(dialog);
+            testResults.Add(("基本的な同期処理テスト", result2, true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("基本的な同期処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 3. データ変換処理テスト
+        try
+        {
+            var result3 = await RunDataTransformationTest(dialog);
+            testResults.Add(("データ変換処理テスト", result3.ToString(), true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("データ変換処理テスト", $"エラー: {ex.Message}", false));
+        }
+
+        // 結果表示
+        await ShowTestResults(dialog, testResults);
     }
 }

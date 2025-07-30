@@ -128,20 +128,20 @@ namespace AppTool
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    using var processingdialog = new ProcessingDialog
-                    {
-                        Title = "削除中",
-                        ContentText = $"SharePointリスト '{selectedItem.Info.Name}' の全レコード削除中...",
-                        MaxValue = 15000,
-                        XamlRoot = Content.XamlRoot,
-                    };
+                    //using var processingdialog = new ProcessingDialog
+                    //{
+                    //    Title = "削除中",
+                    //    ContentText = $"SharePointリスト '{selectedItem.Info.Name}' の全レコード削除中...",
+                    //    MaxValue = 15000,
+                    //    XamlRoot = Content.XamlRoot,
+                    //};
 
-                    var logger = new ProcessingLogger();
+                    //var logger = new ProcessingLogger();
 
-                    await processingdialog.RunAsync(progress =>
-                    {
-                        ViewModel.TestExecute(selectedItem.Info, progress, logger);
-                    });
+                    //await processingdialog.RunAsync(progress =>
+                    //{
+                    //    ViewModel.TestExecute(selectedItem.Info, progress, logger);
+                    //});
 
                     //using var processingdialog = new ProcessingDialog()
                     //{
@@ -149,6 +149,20 @@ namespace AppTool
                     //};
 
                     //var resultText = await ProcessingDialogTestHelper.RunTimeoutTest(processingdialog);
+
+                    using var processingdialog = new ProcessingDialog
+                    {
+                        Title = "テスト中",
+                        XamlRoot = Content.XamlRoot,
+                    };
+
+                    //// 同期処理エラーテスト
+                    //var errorResult = await ProcessingDialogTestHelper.RunSyncErrorTest(processingdialog);
+
+                    //// ファイル操作エラーテスト
+                    //var fileResult = await ProcessingDialogTestHelper.RunSyncFileErrorTest(processingdialog);
+
+                    await ProcessingDialogTestHelper.RunAllTests(processingdialog);
                 }
             }
         }
