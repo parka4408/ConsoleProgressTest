@@ -18,6 +18,11 @@ public abstract partial class ConnectStatus : ObservableObject
 
     public abstract string ServerName { get; }
 
+    /// <summary>
+    /// 環境種別（本番、検証、開発など）
+    /// </summary>
+    public abstract string EnvironmentType { get; }
+
     public bool IsTryConnect => !IsConnecting;
 
     /// <summary>
@@ -49,6 +54,36 @@ public abstract partial class ConnectStatus : ObservableObject
                 return new SolidColorBrush(Color.FromArgb(255, 244, 67, 54)); // 赤色
 
             return new SolidColorBrush(Color.FromArgb(255, 158, 158, 158)); // グレー
+        }
+    }
+
+    /// <summary>
+    /// 環境種別バッジの色
+    /// </summary>
+    public Brush EnvironmentBadgeBrush
+    {
+        get
+        {
+            return EnvironmentType switch
+            {
+                "本番" => new SolidColorBrush(Color.FromArgb(255, 220, 53, 69)),   // 赤色（危険）
+                "検証" => new SolidColorBrush(Color.FromArgb(255, 13, 110, 253)),  // 青色（検証）
+                "開発" => new SolidColorBrush(Color.FromArgb(255, 40, 167, 69)),   // 緑色（安全）
+                "未設定" => new SolidColorBrush(Color.FromArgb(255, 108, 117, 125)), // グレー（未設定）
+                "不明" => new SolidColorBrush(Color.FromArgb(255, 255, 140, 0)),   // DarkOrange（判定不可）
+                _ => new SolidColorBrush(Color.FromArgb(255, 108, 117, 125))       // グレー（デフォルト）
+            };
+        }
+    }
+
+    /// <summary>
+    /// 環境種別バッジの表示制御（常に表示）
+    /// </summary>
+    public Microsoft.UI.Xaml.Visibility IsEnvironmentVisible
+    {
+        get
+        {
+            return Microsoft.UI.Xaml.Visibility.Visible;
         }
     }
 

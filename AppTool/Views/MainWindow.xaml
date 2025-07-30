@@ -429,12 +429,30 @@
                         Height="12" 
                         Background="{x:Bind StatusIndicatorBrush, Mode=OneWay}" 
                         CornerRadius="6"/>
+
                     <TextBlock
                         Text="{x:Bind ServerName, Mode=OneWay}" 
-                        FontSize="14"/>
+                        FontSize="14"
+                        Margin="0,0,6,0"/>
+
+                    <!-- 環境種別バッジ -->
+                    <Border
+                        Background="{x:Bind EnvironmentBadgeBrush, Mode=OneWay}"
+                        CornerRadius="3"
+                        Padding="6,2"
+                        Margin="0,0,8,0"
+                        Visibility="{x:Bind IsEnvironmentVisible, Mode=OneWay}">
+                        <TextBlock
+                            Text="{x:Bind EnvironmentType, Mode=OneWay}" 
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            Foreground="White"/>
+                    </Border>
+
                     <TextBlock
                         Text="{x:Bind ConnectionStatusText, Mode=OneWay}" 
                         FontSize="14"/>
+
                 </StackPanel>
             </DataTemplate>
 
