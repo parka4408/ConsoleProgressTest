@@ -356,6 +356,87 @@ public static class ProcessingDialogTestFunctions
         progress.Report(100);
         return transformedItems;
     }
+
+    // === 非同期処理（キャンセル不可）テスト関数群 ===
+
+    /// <summary>
+    /// 非同期処理テスト（キャンセル不可・戻り値なし）
+    /// </summary>
+    public static async Task NonCancellableAsyncProcessingTest(IProgress<int> progress)
+    {
+        const int maxSteps = 100;
+
+        for (int i = 0; i <= maxSteps; i++)
+        {
+            progress.Report(i);
+            await Task.Delay(50);
+
+            // 中間処理のシミュレート
+            if (i == maxSteps / 2)
+            {
+                await Task.Delay(200); // 少し長い処理
+            }
+        }
+    }
+
+    /// <summary>
+    /// 非同期データ処理テスト（キャンセル不可・戻り値あり）
+    /// </summary>
+    public static async Task<string> NonCancellableAsyncDataProcessingTest(IProgress<int> progress)
+    {
+        const int totalRecords = 80;
+        var processedData = new List<string>();
+
+        for (int i = 0; i < totalRecords; i++)
+        {
+            progress.Report(i + 1);
+            
+            // 非同期データ処理をシミュレート
+            await Task.Delay(75);
+            
+            var data = $"ProcessedData_{i:D3}";
+            processedData.Add(data);
+
+            // 定期的に長い処理をシミュレート
+            if (i % 20 == 0)
+            {
+                await Task.Delay(150);
+            }
+        }
+
+        return $"処理完了: {processedData.Count}件のデータを処理";
+    }
+
+    /// <summary>
+    /// 非同期API呼び出しシミュレーション（キャンセル不可・戻り値あり）
+    /// </summary>
+    public static async Task<int> NonCancellableAsyncApiCallTest(IProgress<int> progress)
+    {
+        const int totalCalls = 30;
+        int successfulCalls = 0;
+
+        for (int i = 0; i < totalCalls; i++)
+        {
+            progress.Report(i + 1);
+            
+            // API呼び出しの遅延をシミュレート
+            await Task.Delay(Random.Shared.Next(100, 300));
+            
+            // 成功率90%でシミュレート
+            if (Random.Shared.NextDouble() > 0.1)
+            {
+                successfulCalls++;
+            }
+
+            // 5回に1回長い処理
+            if (i % 5 == 0)
+            {
+                await Task.Delay(400);
+            }
+        }
+
+        return successfulCalls;
+    }
 }
 
 /// <summary>
@@ -512,6 +593,41 @@ public static class ProcessingDialogTestHelper
         return await dialog.RunAsync(ProcessingDialogTestFunctions.DataTransformationTest);
     }
 
+    // === 非同期処理（キャンセル不可）テスト実行ヘルパー ===
+
+    /// <summary>
+    /// 非同期処理テスト（キャンセル不可・戻り値なし）の実行例
+    /// </summary>
+    public static async Task RunNonCancellableAsyncTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "非同期処理テスト（キャンセル不可）";
+        dialog.MaxValue = 100;
+
+        await dialog.RunAsync(ProcessingDialogTestFunctions.NonCancellableAsyncProcessingTest);
+    }
+
+    /// <summary>
+    /// 非同期データ処理テスト（キャンセル不可・戻り値あり）の実行例
+    /// </summary>
+    public static async Task<string> RunNonCancellableAsyncDataTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "非同期データ処理テスト（キャンセル不可）";
+        dialog.MaxValue = 80;
+
+        return await dialog.RunAsync(ProcessingDialogTestFunctions.NonCancellableAsyncDataProcessingTest);
+    }
+
+    /// <summary>
+    /// 非同期API呼び出しテスト（キャンセル不可・戻り値あり）の実行例
+    /// </summary>
+    public static async Task<int> RunNonCancellableAsyncApiTest(ProcessingDialog dialog)
+    {
+        dialog.ContentText = "非同期API呼び出しテスト（キャンセル不可）";
+        dialog.MaxValue = 30;
+
+        return await dialog.RunAsync(ProcessingDialogTestFunctions.NonCancellableAsyncApiCallTest);
+    }
+
     // === 全テスト連続実行 ===
 
     /// <summary>
@@ -642,10 +758,49 @@ public static class ProcessingDialogTestHelper
 
         await Task.Delay(1000);
 
-        // 10. タイムアウトテスト（最後に実行）
+        // 10. 非同期処理テスト（キャンセル不可・戻り値なし）
         try
         {
-            var result10 = await RunTimeoutTest(dialog);
+            await RunNonCancellableAsyncTest(dialog);
+            testResults.Add(("非同期処理テスト（キャンセル不可・戻り値なし）", "処理完了", true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("非同期処理テスト（キャンセル不可・戻り値なし）", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 11. 非同期データ処理テスト（キャンセル不可・戻り値あり）
+        try
+        {
+            var result11 = await RunNonCancellableAsyncDataTest(dialog);
+            testResults.Add(("非同期データ処理テスト（キャンセル不可・戻り値あり）", result11, true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("非同期データ処理テスト（キャンセル不可・戻り値あり）", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 12. 非同期API呼び出しテスト（キャンセル不可・戻り値あり）
+        try
+        {
+            var result12 = await RunNonCancellableAsyncApiTest(dialog);
+            testResults.Add(("非同期API呼び出しテスト（キャンセル不可・戻り値あり）", $"成功: {result12}件", true));
+        }
+        catch (Exception ex)
+        {
+            testResults.Add(("非同期API呼び出しテスト（キャンセル不可・戻り値あり）", $"エラー: {ex.Message}", false));
+        }
+
+        await Task.Delay(1000);
+
+        // 13. タイムアウトテスト（最後に実行）
+        try
+        {
+            var result13 = await RunTimeoutTest(dialog);
             // タイムアウトテストでは5秒でタイムアウト発生してUIに表示されるため成功
             testResults.Add(("タイムアウトテスト", "タイムアウト処理完了", true));
         }

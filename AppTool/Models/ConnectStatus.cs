@@ -76,17 +76,6 @@ public abstract partial class ConnectStatus : ObservableObject
         }
     }
 
-    /// <summary>
-    /// 環境種別バッジの表示制御（常に表示）
-    /// </summary>
-    public Microsoft.UI.Xaml.Visibility IsEnvironmentVisible
-    {
-        get
-        {
-            return Microsoft.UI.Xaml.Visibility.Visible;
-        }
-    }
-
     partial void OnIsConnectingChanged(bool oldValue, bool newValue)
     {
         OnPropertyChanged(nameof(IsTryConnect));

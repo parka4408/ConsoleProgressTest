@@ -440,8 +440,7 @@
                         Background="{x:Bind EnvironmentBadgeBrush, Mode=OneWay}"
                         CornerRadius="3"
                         Padding="6,2"
-                        Margin="0,0,8,0"
-                        Visibility="{x:Bind IsEnvironmentVisible, Mode=OneWay}">
+                        Margin="0,0,8,0">
                         <TextBlock
                             Text="{x:Bind EnvironmentType, Mode=OneWay}" 
                             FontSize="10"

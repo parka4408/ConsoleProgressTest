@@ -92,7 +92,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
             {
                 // UI要素を初期状態にリセット
                 ProgressingTextBlock.Text = " - ";
-                ContentProgressBar.IsIndeterminate = !MaxValue.HasValue;
+                ContentProgressBar.IsIndeterminate = !IsPercentageMode();
                 ContentProgressBar.Value = 0;
                 StatusTextBlock.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
                 StatusTextBlock.Text = "";
@@ -179,6 +179,32 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
     }
 
     /// <summary>
+    /// 非同期処理をキャンセル不可で実行（戻り値なし）
+    /// </summary>
+    /// <param name="asyncAction">実行する非同期処理</param>
+    public async Task RunAsync(Func<IProgress<int>, Task> asyncAction)
+    {
+        await ExecuteRunAsync(async tcs =>
+        {
+            await StartProcessing(async () => { await asyncAction(CreateProgress()); return true; }, tcs, _cancellationTokenSource!.Token);
+        }, false);
+    }
+
+    /// <summary>
+    /// 非同期処理をキャンセル不可で実行し、結果を返却
+    /// </summary>
+    /// <typeparam name="T">戻り値の型</typeparam>
+    /// <param name="asyncFunc">実行する非同期処理</param>
+    /// <returns>処理の実行結果</returns>
+    public async Task<T> RunAsync<T>(Func<IProgress<int>, Task<T>> asyncFunc)
+    {
+        return await ExecuteRunAsync<T>(async tcs =>
+        {
+            await StartProcessing(() => asyncFunc(CreateProgress()), tcs, _cancellationTokenSource!.Token);
+        }, false);
+    }
+
+    /// <summary>
     /// 実行開始を試行（重複実行を防止）
     /// </summary>
     /// <returns>実行開始できる場合はtrue、既に実行中の場合はfalse</returns>
@@ -246,7 +272,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
 
             // UI設定
             SecondaryButtonText = showCancelButton ? CancelButtonText : "";
-            ContentProgressBar.IsIndeterminate = !MaxValue.HasValue;
+            ContentProgressBar.IsIndeterminate = !IsPercentageMode();
 
             // 処理開始（バックグラウンドで実行、awaitしない）
             _ = processStarter(tcs);
@@ -338,9 +364,18 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
     /// <returns>パーセンテージまたはカウント表示用のProgressインスタンス</returns>
     private Progress<int> CreateProgress()
     {
-        return MaxValue.HasValue ?
+        return IsPercentageMode() ?
             new Progress<int>(ThrottledProgressingPercentageRender) :
             new Progress<int>(ThrottledProgressingCountRender);
+    }
+
+    /// <summary>
+    /// パーセンテージ表示モードかどうかを判定
+    /// </summary>
+    /// <returns>MaxValueが設定されており、かつ0より大きい場合はtrue</returns>
+    private bool IsPercentageMode()
+    {
+        return MaxValue.HasValue && MaxValue.Value > 0;
     }
 
     /// <summary>
@@ -349,7 +384,7 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
     /// <param name="value">進捗値</param>
     private void UpdateProgress(int value)
     {
-        if (MaxValue.HasValue)
+        if (IsPercentageMode())
         {
             ProgressingPercentageRender(value);
         }
@@ -541,9 +576,9 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
         DispatcherQueue.TryEnqueue(() =>
         {
             // 処理完了時に最終進捗を確実に表示
-            if (MaxValue.HasValue)
+            if (IsPercentageMode() && MaxValue is int maxValue)
             {
-                ProgressingPercentageRender(MaxValue.Value);
+                ProgressingPercentageRender(maxValue);
             }
             else
             {
@@ -609,14 +644,14 @@ public sealed partial class ProcessingDialog : ContentDialog, IDisposable, INoti
     /// 進捗をパーセンテージ形式で表示
     /// </summary>
     /// <param name="value">現在の進捗値</param>
-    /// <exception cref="ArgumentException">MaxValueが設定されていない場合</exception>
+    /// <exception cref="ArgumentException">MaxValueが設定されていない、または0以下の場合</exception>
     private void ProgressingPercentageRender(int value)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (!MaxValue.HasValue)
+            if (!MaxValue.HasValue || MaxValue.Value <= 0)
             {
-                throw new ArgumentException("MaxValueが設定されていないため、パーセンテージ表示できません。");
+                throw new ArgumentException("MaxValueが設定されていない、または0以下のため、パーセンテージ表示できません。");
             }
 
             double ratio = (double)value / MaxValue.Value;

@@ -42,6 +42,5 @@ public partial class SharePointConnectInfo : ConnectStatus
     {
         OnPropertyChanged(nameof(EnvironmentType));
         OnPropertyChanged(nameof(EnvironmentBadgeBrush));
-        OnPropertyChanged(nameof(IsEnvironmentVisible));
     }
 }
