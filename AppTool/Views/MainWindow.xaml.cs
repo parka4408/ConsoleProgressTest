@@ -1,6 +1,7 @@
 using AppTool.Dialogs;
 using AppTool.Models;
 using AppTool.ViewModels;
+using AppTool.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -47,15 +48,18 @@ namespace AppTool
 
             var result = await dialog.ShowAsync();
 
-            if (result == ContentDialogResult.Primary)
-            {
-                UpdateListButton.IsEnabled = false;
+            //if (result == ContentDialogResult.Primary)
+            //{
+            //    UpdateListButton.IsEnabled = false;
 
-                var logger = new ProcessingLogger();
-                await ViewModel.TestWithTasksAsync(logger);
+            //    var logger = new ProcessingLogger();
+            //    await ViewModel.TestWithTasksAsync(logger);
 
-                UpdateListButton.IsEnabled = true;
-            }
+            //    UpdateListButton.IsEnabled = true;
+            //}
+
+            var window = new LicenseViewerWindow();
+            window.Activate();
         }
 
         private async void SynchronizeUpdatedRecordsButton_Click(object sender, RoutedEventArgs e)
@@ -211,8 +215,9 @@ namespace AppTool
 
             bool result = await Task.Run(() =>
             {
-                Task.Delay(3000).Wait(); // –Í‹[Ú‘±ˆ—
-                return new Random().Next(2) == 0; // ¬Œ÷ or ¸”s
+                Task.Delay(1000).Wait(); // –Í‹[Ú‘±ˆ—
+                //return new Random().Next(2) == 0; // ¬Œ÷ or ¸”s
+                return true;
             });
 
             SsConnectingPulseStoryboard.Stop();
@@ -271,7 +276,7 @@ namespace AppTool
 
             bool result = await Task.Run(() =>
             {
-                Task.Delay(3000).Wait(); // –Í‹[Ú‘±ˆ—
+                Task.Delay(1000).Wait(); // –Í‹[Ú‘±ˆ—
                 //return new Random().Next(2) == 0; // ¬Œ÷ or ¸”s
                 return true;
             });

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleProgressTest
@@ -7,6 +9,18 @@ namespace ConsoleProgressTest
     {
         static void Main(string[] args)
         {
+            // コマンドライン引数をチェック
+            if (args.Contains("--help") || args.Contains("-h"))
+            {
+                ShowHelp();
+                return;
+            }
+            else if (args.Contains("--license") || args.Contains("-l"))
+            {
+                ShowLicenseInfo();
+                return;
+            }
+
             MainAsync(args).GetAwaiter().GetResult();
         }
 
@@ -42,6 +56,44 @@ namespace ConsoleProgressTest
             {
                 Console.WriteLine($"実行中にエラーが発生しました: {ex.Message}");
                 Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            }
+        }
+
+        static void ShowHelp()
+        {
+            Console.WriteLine("ConsoleProgressTest - プログレスバー機能のテストプログラム");
+            Console.WriteLine();
+            Console.WriteLine("使用方法:");
+            Console.WriteLine("  ConsoleProgressTest.exe [オプション]");
+            Console.WriteLine();
+            Console.WriteLine("オプション:");
+            Console.WriteLine("  -h, --help      このヘルプメッセージを表示");
+            Console.WriteLine("  -l, --license   プロジェクト依存関係のライセンス情報を表示");
+            Console.WriteLine();
+            Console.WriteLine("引数なしで実行した場合は、対話モードで動作します。");
+        }
+
+        static void ShowLicenseInfo()
+        {
+            string licensePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "license.md");
+
+            if (!File.Exists(licensePath))
+            {
+                Console.WriteLine("ライセンス情報が見つかりません。");
+                Console.WriteLine("ビルドを実行してlicense.mdを生成してください。");
+                return;
+            }
+
+            try
+            {
+                string licenseContent = File.ReadAllText(licensePath);
+                Console.WriteLine("=== プロジェクト依存関係ライセンス情報 ===");
+                Console.WriteLine();
+                Console.WriteLine(licenseContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ライセンス情報の読み込み中にエラーが発生しました: {ex.Message}");
             }
         }
     }

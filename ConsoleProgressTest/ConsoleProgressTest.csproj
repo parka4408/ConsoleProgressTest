@@ -62,4 +62,18 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  
+  <!-- license.md をビルド前に生成 -->
+  <Target Name="GenerateLicenseMarkdown" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet-project-licenses --input &quot;$(ProjectDir)..\ConsoleProgressTest.sln&quot; --include-transitive --md --timeout 60 --log-level Warning &gt; &quot;$(ProjectDir)license.md&quot;" />
+    <!-- 不要なlicenses.mdファイルを削除 -->
+    <Delete Files="$(ProjectDir)licenses.md" Condition="Exists('$(ProjectDir)licenses.md')" />
+  </Target>
+  
+  <!-- license.md を出力ディレクトリにコピー -->
+  <ItemGroup>
+    <Content Include="license.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

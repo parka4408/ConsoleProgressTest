@@ -40,14 +40,18 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Markdig" Version="0.41.3" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.250702007-experimental4" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Views\" />
+    <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
+    <Page Update="Views\LicenseViewerWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Dialogs\ProcessingDialog.xaml">
@@ -71,4 +75,18 @@
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
   </PropertyGroup>
+
+  <!-- license.md をビルド前に生成 -->
+  <Target Name="GenerateLicenseMarkdown" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet-project-licenses --input &quot;$(ProjectDir)..\ConsoleProgressTest.sln&quot; --include-transitive --md --timeout 60 --log-level Warning &gt; &quot;$(ProjectDir)license.md&quot;" />
+    <!-- 不要なlicenses.mdファイルを削除 -->
+    <Delete Files="$(ProjectDir)licenses.md" Condition="Exists('$(ProjectDir)licenses.md')" />
+  </Target>
+
+  <!-- license.md を出力ディレクトリにコピー -->
+  <ItemGroup>
+    <Content Include="license.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
