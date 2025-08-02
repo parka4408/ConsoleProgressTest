@@ -6,13 +6,18 @@ namespace AppTool.Models;
 
 public class ProcessingLogger : ILogger
 {
-    public void Error(string message, Exception? exception = null, bool clearLine = true)
+    public void Info(string message)
     {
-        Debug.WriteLine("[Error] " + message);
+        Debug.WriteLine("[Info] " + message);
     }
 
-    public void Warning(string message, bool clearLine = true)
+    public void Warning(string message)
     {
         Debug.WriteLine("[Warning] " + message);
+    }
+
+    public void Error(string message, Exception? exception = null)
+    {
+        Debug.WriteLine("[Error] " + message);
     }
 }

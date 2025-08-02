@@ -14,6 +14,9 @@ namespace AppProgress
 
         public ProgressState(int? maxValue)
         {
+            if (maxValue.HasValue && maxValue < 0)
+                throw new ArgumentException("MaxValue cannot be negative");
+
             MaxValue = maxValue;
             _timeEstimator = new TimeEstimator(DateTime.UtcNow);
         }

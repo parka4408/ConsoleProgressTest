@@ -41,10 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DefaultLoggerColorScheme.cs" />
     <Compile Include="SynchronizedProgressLogger.cs" />
     <Compile Include="ProgressBarOptions.cs" />
     <Compile Include="ProgressBarRender.cs" />
-    <Compile Include="ProgressReporter.cs" />
+    <Compile Include="ProgressConsoleReporter.cs" />
     <Compile Include="ProgressState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TimeEstimator.cs" />

@@ -575,7 +575,7 @@ public static class ProcessingDialogTestHelper
         {
             return await dialog.RunAsync(ProcessingDialogTestFunctions.SyncFileOperationSimulation);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.FileNotFoundException)
         {
             // エラー処理（この例外は ProcessingDialog で UI 表示されるため、ここには到達しない）
             return -1;

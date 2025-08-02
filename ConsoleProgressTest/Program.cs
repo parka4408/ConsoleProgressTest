@@ -1,7 +1,4 @@
-﻿using AppProgress;
-using Interfaces;
-using System;
-using System.Threading;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace ConsoleProgressTest
@@ -10,55 +7,42 @@ namespace ConsoleProgressTest
     {
         static void Main(string[] args)
         {
-            var totalCount = 15000;
-
-            var logger = new SynchronizedProgressLogger();
-
-            Console.WriteLine("処理開始");
-            using (var prog = new ProgressReporter(totalCount, logger: logger))
-            {
-                LongTask(totalCount, prog, logger);
-            }
-            Console.WriteLine("処理終了");
+            MainAsync(args).GetAwaiter().GetResult();
         }
 
-        private static void LongTask(int totalCount, IProgress<int> progress = null, ILogger logger = null)
+        static async Task MainAsync(string[] args)
         {
-            var threadNum = 10;
-            var batchNum = totalCount / threadNum;
-            var errorBorder = 50;
-            var count = 0;
+            Console.WriteLine("ConsoleProgressTest プログラム");
+            Console.WriteLine("どちらを実行しますか？");
+            Console.WriteLine();
+            Console.WriteLine("1. ProgressConsoleReporter テストプログラム");
+            Console.WriteLine("0. 終了");
+            Console.WriteLine();
+            Console.Write("選択してください (0-2): ");
 
-            Parallel.For(0, threadNum, i =>
+            var input = Console.ReadLine();
+            Console.WriteLine();
+
+            try
             {
-                for (int j = 0; j < batchNum; j++)
+                switch (input)
                 {
-                    int current = Interlocked.Increment(ref count);
-                    if (current % errorBorder == 0)
-                    {
-                        logger?.Error($"スレッド{i}: エラー発生1");
-
-                    }
-                    else if (current % (errorBorder * 1.5) == 0)
-                    {
-                        logger?.Error($"スレッド{i}: エラー発生2");
-                    }
-
-                    progress?.Report(current);
-                    Thread.Sleep(10);
+                    case "1":
+                        await ProgressTestRunner.RunTests();
+                        break;
+                    case "0":
+                        Console.WriteLine("プログラムを終了します。");
+                        return;
+                    default:
+                        Console.WriteLine("無効な選択です。");
+                        break;
                 }
-            });
-
-            //for (int j = 0; j <= totalCount; j += 1)
-            //{
-            //    prog.Report(j);
-            //    Thread.Sleep(10);
-
-            //    if ((j + 1) % 50 == 0)
-            //    {
-            //        logger.Error($"スレッド: エラー発生");
-            //    }
-            //}
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"実行中にエラーが発生しました: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            }
         }
     }
 }
